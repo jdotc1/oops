@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。
 - fish に対応しました。`~/.config/fish/config.fish` に `oops init fish | source` を足します（[#9](https://github.com/ysb3996-blip/oops/issues/9)）。
 - zsh のプラグインマネージャー（antidote・zinit・Oh My Zsh など）向けに `oops.plugin.zsh` を追加。clone したリポジトリの oops を動かすので、gem のインストールはいりません。
 - Homebrew tap を用意しました: `brew install ysb3996-blip/oops/oops`。Homebrew の Ruby で oops を動かします。

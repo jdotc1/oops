@@ -24,7 +24,8 @@ module Oops
       when "status" then return status(argv.drop(1), env: env, stdout: stdout, stderr: stderr)
       end
 
-      options = { head: nil, tail: nil, github: false, show_secrets: false, time: false, output_only: false }
+      options = { head: nil, tail: nil, github: false, show_secrets: false, time: false, output_only: false,
+                  print: false }
       count = nil
       parser = OptionParser.new do |o|
         o.banner = "Usage: oops [N | err] [-n N] [options]\n       " \
@@ -40,6 +41,7 @@ module Oops
         o.on("--time", "Add the time each command started") { options[:time] = true }
         o.on("--output-only", "Leave out the command line, keep the output") { options[:output_only] = true }
         o.on("--show-secrets", "Do not mask secrets or apply the replace table") { options[:show_secrets] = true }
+        o.on("-p", "--print", "Write the text to stdout instead of the clipboard") { options[:print] = true }
         o.on("-v", "--version", "Print version and exit") do
           stdout.puts "oops #{VERSION}"
           return 0
@@ -88,7 +90,13 @@ module Oops
       raise Failure, (target.failed_only ? "no failed command found." : "no command found yet.") if records.empty?
 
       home = env["HOME"].to_s.empty? ? Dir.home : env["HOME"]
-      result = Formatter.new(config: config, home: home, **options).format(records)
+      format_options = options.except(:print)
+      result = Formatter.new(config: config, home: home, **format_options).format(records)
+      if options[:print]
+        stdout.write result.text
+        return 0
+      end
+
       backend = Clipboard.detect(config.clipboard, env: env)
       raise Failure, NO_CLIPBOARD if backend.nil?
 

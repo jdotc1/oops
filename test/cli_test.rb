@@ -22,12 +22,14 @@ class CLITest < Minitest::Test
     assert_includes out.string, "-n N"
   end
 
-  def test_help_lists_status_time_and_output_only
+  def test_help_lists_status_time_output_only_and_print
     out = StringIO.new
     assert_equal 0, Oops::CLI.run(["--help"], stdout: out, stderr: StringIO.new)
     assert_includes out.string, "oops init <shell> | pause | resume | status | doctor"
     assert_includes out.string, "--time"
     assert_includes out.string, "--output-only"
+    assert_includes out.string, "--print"
+    assert_includes out.string, "-p"
   end
 
   def test_init_prints_snippet_with_absolute_bin
@@ -338,6 +340,39 @@ class CLICopyTest < Minitest::Test
     with_detect(->(*, **) {}) do
       assert_equal [1, "", "oops: no clipboard tool found (tried pbcopy, wl-copy, xclip, xsel, clip.exe, OSC 52).\n"],
                    run_cli
+    end
+  end
+
+  def test_print_writes_text_to_stdout_without_touching_clipboard
+    add("c1", "one\r\n")
+    add("c2", "two\r\n")
+    with_detect(->(*, **) { flunk "clipboard must not be used with --print" }) do
+      status, out, err = run_cli("--print")
+      assert_equal 0, status
+      assert_equal "```\n$ c2\ntwo\n```\n", out
+      assert_empty err
+      refute File.exist?(@clip)
+    end
+  end
+
+  def test_print_short_option_matches_long_form
+    add("bad", "boom\r\n", exit: 2)
+    add("good", "fine\r\n")
+    expected = "```console\n$ bad\nboom\n(exit 2)\n```\n"
+    with_detect(->(*, **) { flunk "clipboard must not be used with -p" }) do
+      assert_equal [0, expected, ""], run_cli("err", "--github", "-p")
+      assert_equal [0, expected, ""], run_cli("err", "--github", "--print")
+      refute File.exist?(@clip)
+    end
+  end
+
+  def test_print_works_when_no_clipboard_tool_is_available
+    add("c1", "one\r\n")
+    with_detect(->(*, **) {}) do
+      status, out, err = run_cli("-p")
+      assert_equal 0, status
+      assert_equal "```\n$ c1\none\n```\n", out
+      assert_empty err
     end
   end
 

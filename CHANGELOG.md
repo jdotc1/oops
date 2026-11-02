@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)).
 - fish support: add `oops init fish | source` to `~/.config/fish/config.fish` ([#9](https://github.com/ysb3996-blip/oops/issues/9)).
 - `oops.plugin.zsh` for zsh plugin managers (antidote, zinit, Oh My Zsh, ...). It runs oops from the cloned repository, so no gem install is needed.
 - Homebrew tap: `brew install ysb3996-blip/oops/oops`. The formula runs oops with Homebrew's Ruby.
