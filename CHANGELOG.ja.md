@@ -2,9 +2,9 @@
 
 [English](CHANGELOG.md) | 日本語
 
-## 未リリース
+## 0.4.0 - 2026-11-03
 
-- `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。
+- `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。[@ShahadatTest](https://github.com/ShahadatTest) さんによる貢献（[#52](https://github.com/ysb3996-blip/oops/pull/52)）。
 
 ## 0.3.0 - 2026-11-02
 
