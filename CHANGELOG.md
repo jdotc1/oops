@@ -2,9 +2,9 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
-## Unreleased
+## 0.4.0 - 2026-11-03
 
-- `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)).
+- `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)). Contributed by [@ShahadatTest](https://github.com/ShahadatTest) in [#52](https://github.com/ysb3996-blip/oops/pull/52).
 
 ## 0.3.0 - 2026-11-02
 
