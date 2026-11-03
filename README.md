@@ -2,7 +2,7 @@
 
 English | [日本語](README.ja.md)
 
-[![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![codecov](https://codecov.io/gh/ysb3996-blip/oops/graph/badge.svg)](https://codecov.io/gh/ysb3996-blip/oops) [![All Contributors](https://img.shields.io/github/all-contributors/ysb3996-blip/oops?color=ee8449)](#contributors)
 
 Copy the last shell command and its output to the clipboard, ready to paste.
 
@@ -30,6 +30,8 @@ brew install ysb3996-blip/oops/oops
 The Homebrew formula runs oops with Homebrew's own Ruby, so it works even if an older Ruby comes first on your `PATH`.
 
 Requires Ruby 3.3 or newer on macOS or Linux (WSL counts as Linux), and zsh, bash or fish. There are no runtime gem dependencies.
+
+Checked by hand on macOS in Terminal.app, iTerm2, Ghostty and the VS Code integrated terminal. If it misbehaves in another terminal, please open an issue.
 
 `gem install` puts oops into the Ruby that is active at that moment; each Ruby version has its own gems. With rbenv, asdf or mise, a tab that uses another Ruby gives a `command not found` error for `oops`, also when the shell starts. The fix that always works is to run `gem install oops-cli` again under the active Ruby (with rbenv, follow with `rbenv rehash`). Outside directories that pin a Ruby with `.ruby-version`, `.tool-versions` or `mise.toml`, you can instead set the Ruby you installed into as your global Ruby (for example `rbenv global 3.3.5`).
 
@@ -98,6 +100,7 @@ To turn oops off for one shell, start it with `OOPS_DISABLE=1` (for example `OOP
 | `oops doctor` | Diagnose recording, hooks, clipboard, config and log size |
 | `oops pause` / `oops resume` | Stop and restart recording. While paused, nothing is written to disk |
 | `oops status` | Print `recording`, `paused` or `off` on one line, for scripts and prompts |
+| `oops clear` / `oops clear --all` | Delete the logs of closed tabs; `--all` also empties this tab's log |
 | `oops record -- <shell>` | Internal: runs a shell under the recorder. The snippet calls this |
 | `oops --version`, `oops --help` | Version and usage |
 
@@ -196,12 +199,14 @@ replace:            # plain string replacements applied when copying
 secrets:            # extra regular expressions to mask
   - "sk_live_[A-Za-z0-9]+"
 clipboard: auto     # auto | pbcopy | wl-copy | xclip | xsel | clip.exe | osc52 | any command (reads stdin)
+retention_days: 7   # delete closed tabs' logs after this many days; false keeps them
 ```
 
 - Replacements and masking are applied at the moment you copy; the recorded log stays untouched, so a config change also affects earlier commands.
 - `replace` keys are applied longest first and are case-sensitive.
 - Unknown keys produce a warning and are ignored. A broken YAML file produces a warning and oops carries on without a config.
 - With `clipboard: auto`, oops tries `pbcopy` on macOS, `clip.exe` on WSL, `wl-copy` on Wayland, `xclip` or `xsel` on X11, and falls back to the OSC 52 terminal escape sequence (also used over SSH). `oops doctor` shows which one it picked.
+- `retention_days` (default 7) counts from the last time a closed tab wrote its log. Old logs are deleted when a tab starts recording. With `false`, closed tabs' logs stay until the 50 MB limit removes them.
 - A custom `clipboard:` command runs in its own process group with a 5 second timeout, so it must not read from or configure the terminal (no password prompts, no `stty`); Ctrl-C during a copy does not reach it.
 
 Built-in masking covers AWS access keys, GitHub, GitLab, Slack, npm, OpenAI/Anthropic (`sk-...`), Stripe and Google API tokens, Slack webhook URLs, JWTs, `Authorization` header values, private key blocks (also when the END line is missing), values assigned to names containing `key`, `token`, `secret`, `password`, `passwd` or `pwd`, passwords given as `--password <value>`, `curl -u user:pass`, `mysql -p<value>` or `docker login -p <value>`, email addresses, credentials inside URLs, and public IPv4 addresses (loopback and private ranges are left alone). It is applied to the command line as well as the output.
@@ -215,12 +220,12 @@ Masking is pattern based, so it is a safety net, not a guarantee: a secret in a 
 1. `oops init` prints a snippet that you `eval` from your rc file (`| source` in fish). In an interactive shell on a terminal that is not recorded yet, it restarts the shell under `oops record`.
 2. `oops record` is a small Ruby pty relay: it passes your keystrokes and the shell's output through untouched and forwards window resizes to the shell.
 3. Hooks in the shell (zsh `preexec`/`precmd`, bash `DEBUG` trap and `PROMPT_COMMAND`, fish `fish_preexec`/`fish_postexec` events) emit invisible APC markers around each command. The relay strips them, so your terminal never sees them.
-4. For each finished command the relay appends one JSON line (command, directory, times, exit code, raw output) to a per-tab log under `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/`. Output is capped at 1 MB per command (the tail is kept). Each tab's log is capped at 50 MB: when it passes that, it is rewritten to keep only its newest commands (down to about 37 MiB). When a tab starts recording, logs of closed tabs are deleted, oldest first, until all logs together take at most 50 MB; logs of open tabs are never deleted, so several busy tabs can together use more.
+4. For each finished command the relay appends one JSON line (command, directory, times, exit code, raw output) to a per-tab log under `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/`. Output is capped at 1 MB per command (the tail is kept). Each tab's log is capped at 50 MB: when it passes that, it is rewritten to keep only its newest commands (down to about 37 MiB). When a tab starts recording, logs of closed tabs older than `retention_days` (7 by default) are deleted, and then the oldest of the rest until all logs together take at most 50 MB; logs of open tabs are never deleted, so several busy tabs can together use more.
 5. `oops` reads the end of the current tab's log, cleans and masks the text, builds the code block and hands it to the clipboard. Nothing is ever re-run.
 
 ## Privacy and security
 
-- The session logs hold the raw, **unmasked** output of every recorded command. Masking and the replace table are applied only when you copy. The logs live under `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/`, readable only by you (mode 0600, directory 0700). To delete all of them, run `rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/oops"` (by default `rm -rf ~/.local/state/oops`). Use `oops pause` before showing secrets you do not want on disk.
+- The session logs hold the raw, **unmasked** output of every recorded command. Masking and the replace table are applied only when you copy. The logs live under `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/`, readable only by you (mode 0600, directory 0700). Logs of closed tabs are deleted after 7 days (`retention_days`). `oops clear` deletes them now, and `oops clear --all` also empties the current tab's log. To delete everything, including the logs of other open tabs, run `rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/oops"` (by default `rm -rf ~/.local/state/oops`). Use `oops pause` before showing secrets you do not want on disk.
 - To report a security problem privately, see [SECURITY.md](SECURITY.md). Please do not open a public issue for it.
 - Recorded output is untrusted: any program you run can print text that looks like oops's markers. oops therefore obeys a pause or resume marker only when it agrees with the flag file that `oops pause` and `oops resume` set, so output cannot silently pause recording. A program can still fake where a command starts and ends in the log, so check what you paste.
 
@@ -277,11 +282,11 @@ To try it as your shell does, build and install the gem into the Ruby you are us
 
 ```sh
 gem build oops-cli.gemspec
-gem install ./oops-cli-0.2.0.gem     # the file name follows lib/oops/version.rb
+gem install ./oops-cli-0.3.0.gem     # the file name follows lib/oops/version.rb
 rbenv rehash                         # only with rbenv
 ```
 
-- A gem is installed per Ruby version. If a new tab uses another Ruby than the one you installed into (for example the repository pins 4.0.9, but your global Ruby is 3.3.5), the shell cannot find oops when it starts (bash prints `bash: oops: command not found`, zsh prints `command not found: oops`). Run `gem install` again under that Ruby, e.g. `RBENV_VERSION=3.3.5 gem install ./oops-cli-0.2.0.gem`.
+- A gem is installed per Ruby version. If a new tab uses another Ruby than the one you installed into (for example the repository pins 4.0.9, but your global Ruby is 3.3.5), the shell cannot find oops when it starts (bash prints `bash: oops: command not found`, zsh prints `command not found: oops`). Run `gem install` again under that Ruby, e.g. `RBENV_VERSION=3.3.5 gem install ./oops-cli-0.3.0.gem`.
 - Reinstall after every change. The installed gem is a copy, not a link to your checkout.
 - To remove it: `gem uninstall oops-cli`.
 - Put `eval "$(oops init zsh)"` in your rc file, not just at the prompt: the recorded shell reads the rc file again, and without the line it has no hooks (`oops doctor` shows `hooks: missing`).
@@ -292,14 +297,36 @@ The tests cover formatting, secret masking, the log reader, the stream parser an
 
 Manual checklist before a release:
 
-- No marker garbage is visible in Ghostty, Terminal.app and the VS Code integrated terminal.
+- No marker garbage is visible in Ghostty, Terminal.app, iTerm2 and the VS Code integrated terminal.
 - vim, less and a full-screen terminal app keep up while you resize the window.
 - `exec zsh` in a recorded tab does not start a second recording.
 - A VS Code terminal opened with `code .` from a recorded tab is recorded on its own.
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md); issues labeled `good first issue` are a good place to start.
+Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md); issues labeled `good first issue` are a good place to start. Every pull request must include the test and rubocop results and a check in a new terminal tab; see [What every pull request must include](CONTRIBUTING.md#what-every-pull-request-must-include).
+
+## Contributors
+
+Thanks to everyone who has helped ([emoji key](https://allcontributors.org/docs/en/emoji-key)). To add someone, comment `@all-contributors please add @<username> for <contributions>` on an issue or pull request.
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ysb3996-blip"><img src="https://avatars.githubusercontent.com/u/257992595?v=4?s=80" width="80px;" alt="ysb3996-blip"/><br /><sub><b>ysb3996-blip</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Code">💻</a> <a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Documentation">📖</a> <a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Tests">⚠️</a> <a href="#maintenance-ysb3996-blip" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ricky9408"><img src="https://avatars.githubusercontent.com/u/49530170?v=4?s=80" width="80px;" alt="Sanghyuk Lee"/><br /><sub><b>Sanghyuk Lee</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=ricky9408" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agenticsymphony-tech"><img src="https://avatars.githubusercontent.com/u/326739730?v=4?s=80" width="80px;" alt="agenticsymphony-tech"/><br /><sub><b>agenticsymphony-tech</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=agenticsymphony-tech" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ## License
 

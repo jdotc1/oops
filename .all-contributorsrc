@@ -1,0 +1,47 @@
+{
+  "projectName": "oops",
+  "projectOwner": "ysb3996-blip",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md",
+    "README.ja.md"
+  ],
+  "imageSize": 80,
+  "commit": false,
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "linkToUsage": false,
+  "contributors": [
+    {
+      "login": "ysb3996-blip",
+      "name": "ysb3996-blip",
+      "avatar_url": "https://avatars.githubusercontent.com/u/257992595?v=4",
+      "profile": "https://github.com/ysb3996-blip",
+      "contributions": [
+        "code",
+        "doc",
+        "test",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "ricky9408",
+      "name": "Sanghyuk Lee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/49530170?v=4",
+      "profile": "https://github.com/ricky9408",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "agenticsymphony-tech",
+      "name": "agenticsymphony-tech",
+      "avatar_url": "https://avatars.githubusercontent.com/u/326739730?v=4",
+      "profile": "https://github.com/agenticsymphony-tech",
+      "contributions": [
+        "doc"
+      ]
+    }
+  ]
+}

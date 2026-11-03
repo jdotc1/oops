@@ -5,6 +5,11 @@ English | [日本語](CHANGELOG.ja.md)
 ## Unreleased
 
 - `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)).
+
+## 0.3.0 - 2026-11-02
+
+- `oops clear` deletes the logs of closed tabs, and `oops clear --all` also empties the current tab's log ([#42](https://github.com/ysb3996-blip/oops/issues/42)).
+- Changed: logs of closed tabs are now deleted 7 days after their last command, when a tab starts recording. Set `retention_days` in the config to change the number of days, or `retention_days: false` to keep them until the 50 MB limit ([#42](https://github.com/ysb3996-blip/oops/issues/42)).
 - fish support: add `oops init fish | source` to `~/.config/fish/config.fish` ([#9](https://github.com/ysb3996-blip/oops/issues/9)).
 - `oops.plugin.zsh` for zsh plugin managers (antidote, zinit, Oh My Zsh, ...). It runs oops from the cloned repository, so no gem install is needed.
 - Homebrew tap: `brew install ysb3996-blip/oops/oops`. The formula runs oops with Homebrew's Ruby.

@@ -22,6 +22,7 @@ module Oops
       when "doctor" then return doctor(argv.drop(1), env: env, stdin: stdin, stdout: stdout)
       when "pause", "resume" then return toggle(argv.first, argv.drop(1), env: env, stdout: stdout)
       when "status" then return status(argv.drop(1), env: env, stdout: stdout, stderr: stderr)
+      when "clear" then return clear(argv.drop(1), env: env, stdout: stdout)
       end
 
       options = { head: nil, tail: nil, github: false, show_secrets: false, time: false, output_only: false,
@@ -29,7 +30,7 @@ module Oops
       count = nil
       parser = OptionParser.new do |o|
         o.banner = "Usage: oops [N | err] [-n N] [options]\n       " \
-                   "oops init <shell> | pause | resume | status | doctor"
+                   "oops init <shell> | pause | resume | status | clear [--all] | doctor"
         o.on("-n N", "Copy the last N commands (with err, last N failures)") do |v|
           raise UsageError, COUNT_REPEATED if count
 
@@ -188,6 +189,25 @@ module Oops
       word == "recording" ? 0 : 1
     end
 
+    # `oops clear [--all]`: deletes the logs of closed tabs; with --all, also
+    # empties this tab's log. Logs of other open tabs are never touched.
+    def self.clear(args, env:, stdout:)
+      raise UsageError, "usage: oops clear [--all]" unless args.empty? || args == ["--all"]
+
+      log = recording_log(env) if args == ["--all"]
+      begin
+        removed = SessionLog.clear!(Paths.sessions_dir(env: env))
+        stdout.puts "removed #{removed} #{removed == 1 ? 'log' : 'logs'} of closed tabs"
+        return 0 unless log
+
+        log.empty!
+      rescue SystemCallError => e
+        raise Failure, "could not delete the logs: #{e.message}"
+      end
+      stdout.puts "emptied this tab's log"
+      0
+    end
+
     # `oops doctor`: diagnostics on stdout; always exits 0.
     def self.doctor(args, env:, stdin:, stdout:)
       raise UsageError, "usage: oops doctor" unless args.empty?
@@ -225,6 +245,6 @@ module Oops
     end
 
     private_class_method :positive, :target, :copy, :report_command, :report_counts, :recording_log, :toggle,
-                         :write_marker, :status, :doctor
+                         :write_marker, :status, :clear, :doctor
   end
 end

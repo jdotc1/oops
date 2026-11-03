@@ -25,19 +25,19 @@ module Oops
       false
     end
 
-    # Deletes the oldest logs of finished sessions until the total size of
-    # all session logs is at most max_bytes. Logs of live sessions are kept.
-    def self.rotate!(dir, max_bytes: DEFAULT_MAX_BYTES, alive: method(:process_alive?))
-      logs = Dir.children(dir).filter_map do |name|
-        m = LOG_NAME.match(name)
-        next unless m
+    # Deletes logs of finished sessions: with max_age, those last written more
+    # than max_age seconds ago; then the oldest, until the total size of all
+    # session logs is at most max_bytes. Logs of live sessions are kept.
+    def self.rotate!(dir, max_bytes: DEFAULT_MAX_BYTES, max_age: nil, now: Time.now,
+                     alive: method(:process_alive?))
+      logs = list(dir)
+      if max_age
+        logs = logs.reject do |log|
+          next false if log[:mtime] >= now - max_age || alive.call(log[:pid])
 
-        size = begin
-          File.size(File.join(dir, name))
-        rescue SystemCallError
-          next
+          remove_log(File.join(dir, log[:name]))
+          true
         end
-        { name: name, pid: m[2].to_i, size: size }
       end
       total = logs.sum { |l| l[:size] }
       logs.sort_by { |l| l[:name] }.each do |log|
@@ -51,6 +51,29 @@ module Oops
       nil
     end
 
+    # Deletes the logs of all finished sessions. Returns how many it deleted.
+    def self.clear!(dir, alive: method(:process_alive?))
+      dead = list(dir).reject { |log| alive.call(log[:pid]) }
+      dead.each { |log| remove_log(File.join(dir, log[:name])) }
+      dead.size
+    rescue Errno::ENOENT
+      0
+    end
+
+    def self.list(dir)
+      Dir.children(dir).filter_map do |name|
+        m = LOG_NAME.match(name)
+        next unless m
+
+        stat = begin
+          File.stat(File.join(dir, name))
+        rescue SystemCallError
+          next
+        end
+        { name: name, pid: m[2].to_i, size: stat.size, mtime: stat.mtime }
+      end
+    end
+
     def self.remove_log(file)
       [file, "#{file}.paused", "#{file}.status", "#{file}.trim"].each do |f|
         File.delete(f)
@@ -58,7 +81,7 @@ module Oops
         nil
       end
     end
-    private_class_method :remove_log
+    private_class_method :list, :remove_log
 
     def initialize(path, max_bytes: DEFAULT_MAX_BYTES)
       @path = path
@@ -123,6 +146,12 @@ module Oops
       File.delete(pause_path)
     rescue Errno::ENOENT
       nil
+    end
+
+    # The recorder opens the log for each record it appends, so the file can
+    # be cut to nothing while the session goes on.
+    def empty!
+      File.truncate(@path, 0)
     end
 
     private

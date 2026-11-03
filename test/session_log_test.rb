@@ -250,4 +250,52 @@ class SessionLogTest < Minitest::Test
       assert_equal %w[20260102-000000-2.jsonl other.jsonl], Dir.children(d).sort
     end
   end
+
+  def test_rotate_deletes_dead_sessions_older_than_max_age
+    Dir.mktmpdir do |d|
+      now = Time.now
+      { "20260101-000000-1" => 10, "20260102-000000-2" => 10, "20260103-000000-3" => 1 }.each do |name, days|
+        File.write("#{d}/#{name}.jsonl", "x")
+        File.utime(now - (days * 86_400), now - (days * 86_400), "#{d}/#{name}.jsonl")
+      end
+      File.write("#{d}/20260101-000000-1.jsonl.status", "ok")
+      Oops::SessionLog.rotate!(d, max_age: 7 * 86_400, now: now, alive: ->(pid) { pid == 1 })
+      assert_equal %w[20260101-000000-1.jsonl 20260101-000000-1.jsonl.status 20260103-000000-3.jsonl],
+                   Dir.children(d).sort
+    end
+  end
+
+  def test_rotate_without_max_age_keeps_old_logs_under_the_size_cap
+    Dir.mktmpdir do |d|
+      File.write("#{d}/20260101-000000-1.jsonl", "x")
+      File.utime(Time.now - (400 * 86_400), Time.now - (400 * 86_400), "#{d}/20260101-000000-1.jsonl")
+      Oops::SessionLog.rotate!(d, alive: ->(_) { false })
+      assert_equal %w[20260101-000000-1.jsonl], Dir.children(d)
+    end
+  end
+
+  def test_clear_deletes_every_dead_session_and_reports_the_count
+    Dir.mktmpdir do |d|
+      %w[20260101-000000-1 20260102-000000-2 20260103-000000-3].each { |n| File.write("#{d}/#{n}.jsonl", "x") }
+      File.write("#{d}/20260102-000000-2.jsonl.paused", "")
+      File.write("#{d}/other.jsonl", "x")
+      assert_equal 2, Oops::SessionLog.clear!(d, alive: ->(pid) { pid == 3 })
+      assert_equal %w[20260103-000000-3.jsonl other.jsonl], Dir.children(d).sort
+    end
+  end
+
+  def test_clear_without_a_sessions_dir_removes_nothing
+    assert_equal 0, Oops::SessionLog.clear!("/nonexistent/oops/sessions")
+  end
+
+  def test_empty_keeps_the_file_and_the_pause_flag
+    with_log do |log|
+      log.append(rec(1))
+      log.pause!
+      log.empty!
+      assert_equal 0, File.size(log.path)
+      assert log.paused?
+      assert_equal [], log.last(1)
+    end
+  end
 end

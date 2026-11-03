@@ -25,7 +25,7 @@ class CLITest < Minitest::Test
   def test_help_lists_status_time_output_only_and_print
     out = StringIO.new
     assert_equal 0, Oops::CLI.run(["--help"], stdout: out, stderr: StringIO.new)
-    assert_includes out.string, "oops init <shell> | pause | resume | status | doctor"
+    assert_includes out.string, "oops init <shell> | pause | resume | status | clear [--all] | doctor"
     assert_includes out.string, "--time"
     assert_includes out.string, "--output-only"
     assert_includes out.string, "--print"
@@ -374,6 +374,59 @@ class CLICopyTest < Minitest::Test
       assert_equal "```\n$ c1\none\n```\n", out
       assert_empty err
     end
+  end
+
+  def sessions_dir = File.join(@dir, "state", "oops", "sessions")
+
+  def closed_tab_log
+    pid = Process.spawn("true")
+    Process.wait(pid)
+    FileUtils.mkdir_p(sessions_dir)
+    path = File.join(sessions_dir, "20260101-000000-#{pid}.jsonl")
+    File.write(path, "x")
+    path
+  end
+
+  def run_clear(*) = run_cli("clear", *, env: @env.merge("XDG_STATE_HOME" => File.join(@dir, "state")))
+
+  def test_clear_deletes_closed_tabs_logs_and_keeps_this_tab
+    logs = [closed_tab_log, closed_tab_log]
+    open_tab = File.join(sessions_dir, "20260101-000000-#{Process.pid}.jsonl")
+    File.write(open_tab, "x")
+    add("c1", "one\r\n")
+    assert_equal [0, "removed 2 logs of closed tabs\n", ""], run_clear
+    logs.each { |l| refute File.exist?(l) }
+    assert File.exist?(open_tab)
+    assert_operator File.size(@session), :>, 0
+  end
+
+  def test_clear_all_also_empties_this_tabs_log
+    closed_tab_log
+    add("c1", "one\r\n")
+    @log.pause!
+    assert_equal [0, "removed 1 log of closed tabs\nemptied this tab's log\n", ""], run_clear("--all")
+    assert_equal 0, File.size(@session)
+    assert @log.paused?
+  end
+
+  def test_clear_with_nothing_to_remove
+    assert_equal [0, "removed 0 logs of closed tabs\n", ""], run_clear
+  end
+
+  def test_clear_all_when_not_recording_fails_and_removes_nothing
+    log = closed_tab_log
+    status, out, err = run_cli("clear", "--all", env: @env.merge("OOPS_SESSION" => nil,
+                                                                 "XDG_STATE_HOME" => File.join(@dir, "state")))
+    assert_equal 1, status
+    assert_empty out
+    assert_includes err, "not recording in this shell"
+    assert File.exist?(log)
+  end
+
+  def test_clear_rejects_other_arguments
+    status, _, err = run_clear("--al")
+    assert_equal 2, status
+    assert_equal "oops: usage: oops clear [--all]\n", err
   end
 
   def test_clipboard_true_or_false_in_config_means_auto_detect

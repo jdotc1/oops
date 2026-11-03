@@ -172,7 +172,8 @@ module Oops
 
     # Rotation only frees space; failing to rotate must not stop recording.
     def rotate_logs(dir)
-      SessionLog.rotate!(dir)
+      days = Config.load(env: @env).retention_days
+      SessionLog.rotate!(dir, max_age: days && (days * 86_400))
     rescue SystemCallError
       nil
     end

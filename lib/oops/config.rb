@@ -3,9 +3,10 @@ require_relative "paths"
 module Oops
   # User configuration loaded from a YAML file; problems become warnings.
   class Config
-    KNOWN_KEYS = %w[replace secrets clipboard].freeze
+    KNOWN_KEYS = %w[replace secrets clipboard retention_days].freeze
+    DEFAULT_RETENTION_DAYS = 7
 
-    attr_reader :replace, :secrets, :clipboard, :warnings
+    attr_reader :replace, :secrets, :clipboard, :retention_days, :warnings
 
     def self.load(path = nil, env: ENV)
       new(path || Paths.config_file(env: env))
@@ -15,6 +16,7 @@ module Oops
       @replace = {}
       @secrets = []
       @clipboard = "auto"
+      @retention_days = DEFAULT_RETENTION_DAYS
       @warnings = []
       read(path)
     end
@@ -41,6 +43,7 @@ module Oops
       apply_replace(data["replace"]) if data.key?("replace")
       apply_secrets(data["secrets"]) if data.key?("secrets")
       apply_clipboard(data["clipboard"]) if data.key?("clipboard")
+      apply_retention_days(data["retention_days"]) if data.key?("retention_days")
     end
 
     # YAML reads `clipboard: true` (or false) as a boolean; as a command it
@@ -48,6 +51,15 @@ module Oops
     def apply_clipboard(value)
       text = value.to_s.strip
       @clipboard = text.empty? || %w[true false].include?(text) ? "auto" : value.to_s
+    end
+
+    # false keeps closed tabs' logs until the size cap removes them.
+    def apply_retention_days(value)
+      return @retention_days = nil if value == false
+      return @retention_days = value if value.is_a?(Integer) && value >= 1
+
+      @warnings << "retention_days must be a whole number of days (at least 1) or false; " \
+                   "using #{DEFAULT_RETENTION_DAYS}"
     end
 
     def apply_replace(value)

@@ -4,6 +4,16 @@ English | [日本語](CONTRIBUTING.ja.md)
 
 Thanks for thinking about helping. oops is a small tool and small contributions are welcome: a typo fix, a bug report, a new masking pattern, a shell tweak.
 
+## What every pull request must include
+
+Paste these three things into the pull request description. A pull request without them is sent back before review.
+
+1. The last line of `bundle exec rake test` (the `N runs, ... 0 failures` line). Run the whole suite, not a single file.
+2. The summary line of `bundle exec rubocop`.
+3. For a change that affects behavior: what you ran in a **new terminal tab** with your build installed, and what it printed (for example `oops doctor` plus the command you tried, or the output before and after). For a docs-only change, write "docs only".
+
+Mask anything private first. The [pull request template](.github/pull_request_template.md) has a place for each. If you open the pull request from the command line (`gh pr create --body ...`) or through another tool, the template is not shown, so copy its sections yourself. AI coding agents: see [AGENTS.md](AGENTS.md).
+
 ## Ways to help
 
 - **Report a bug** with the [bug report form](https://github.com/ysb3996-blip/oops/issues/new?template=bug_report.md). Run `oops doctor` and paste its output.
@@ -33,7 +43,7 @@ Before you open the pull request:
 
 - **Write the test first** and watch it fail for the right reason. Bug fixes need a test that fails without the fix.
 - Run both commands above (`rake` runs the tests and rubocop). CI runs them on Ubuntu and macOS with Ruby 3.3, 3.4 and 4.0.
-- **Verify it yourself and paste the result into the pull request.** This is required, and the pull request template has a section for it. Paste the last lines of `bundle exec rake test` (the `N runs, ... 0 failures` line), the `bundle exec rubocop` summary, and, for any change that affects behavior, what you ran in a **new terminal tab** with your build installed and what it printed (for example `oops doctor` plus the command you tried, or the before and after of the output). Mask anything private first. A pull request without this will be sent back before review.
+- **Verify it yourself and paste the result into the pull request**, as listed in [What every pull request must include](#what-every-pull-request-must-include).
 - Keep each pull request to one change. Explain *why* in the description.
 - Commit messages are short and in the form `type(scope): summary`, for example `fix(ansi): keep words apart when a UI places them with cursor column jumps`. Common types: `fix`, `feat`, `docs`, `test`, `style`, `refactor`.
 - If you change the README or CHANGELOG, update the Japanese file (`README.ja.md`, `CHANGELOG.ja.md`) too. If you cannot write Japanese, say so in the pull request and a maintainer will help.

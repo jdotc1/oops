@@ -2,7 +2,7 @@
 
 [English](README.md) | 日本語
 
-[![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![codecov](https://codecov.io/gh/ysb3996-blip/oops/graph/badge.svg)](https://codecov.io/gh/ysb3996-blip/oops) [![All Contributors](https://img.shields.io/github/all-contributors/ysb3996-blip/oops?color=ee8449)](#貢献してくれた人たち)
 
 直前のシェルコマンドとその出力を、貼り付けられる形でクリップボードにコピーします。
 
@@ -30,6 +30,8 @@ brew install ysb3996-blip/oops/oops
 Homebrew 版は Homebrew の Ruby で oops を動かすので、`PATH` の先に古い Ruby があっても動きます。
 
 macOS または Linux（WSL は Linux 扱い）、Ruby 3.3 以降、zsh・bash・fish のどれかが必要です。実行時に依存する gem はありません。
+
+macOS の Terminal.app・iTerm2・Ghostty・VS Code の統合ターミナルで、手で動作を確かめています。ほかの端末でおかしな動きがあれば、issue で教えてください。
 
 `gem install` は、そのとき有効な Ruby にだけ oops を入れます。gem は Ruby のバージョンごとに別々です。rbenv・asdf・mise などで別の Ruby を使うタブでは、`oops` が `command not found` のエラーになります（シェルの起動時にも出ます）。いつでも使える直し方は、有効な Ruby で `gem install oops-cli` をもう一度実行することです（rbenv なら続けて `rbenv rehash`）。`.ruby-version`・`.tool-versions`・`mise.toml` で Ruby を指定しているディレクトリの外では、代わりにインストールした Ruby を標準（グローバル）の Ruby に設定することもできます（例: `rbenv global 3.3.5`）。
 
@@ -98,6 +100,7 @@ oops init fish | source
 | `oops doctor` | 記録・フック・クリップボード・設定・ログサイズを診断する |
 | `oops pause` / `oops resume` | 記録を止める／再開する。停止中は何もディスクに書かれない |
 | `oops status` | `recording`・`paused`・`off` のどれかを 1 行で出力する（スクリプトやプロンプト向け） |
+| `oops clear` / `oops clear --all` | 閉じたタブのログを削除する。`--all` を付けると、今のタブのログも空にする |
 | `oops record -- <shell>` | 内部用: 記録用プログラムの下でシェルを起動する。スニペットが呼び出す |
 | `oops --version`, `oops --help` | バージョンと使い方 |
 
@@ -196,12 +199,14 @@ replace:            # コピー時に適用する単純な文字列置換
 secrets:            # マスクする追加の正規表現
   - "sk_live_[A-Za-z0-9]+"
 clipboard: auto     # auto | pbcopy | wl-copy | xclip | xsel | clip.exe | osc52 | 任意のコマンド（標準入力から読む）
+retention_days: 7   # 閉じたタブのログをこの日数で削除する。false なら残す
 ```
 
 - 置換とマスクはコピーする瞬間に適用されます。記録済みのログは変更されないため、設定を変えると以前のコマンドにも反映されます。
 - `replace` のキーは長いものから順に、大文字小文字を区別して適用されます。
 - 未知のキーは警告されて無視されます。YAML が壊れている場合も警告が出て、設定なしで続行します。
 - `clipboard: auto` のとき、oops は macOS では `pbcopy`、WSL では `clip.exe`、Wayland では `wl-copy`、X11 では `xclip` か `xsel` を試し、だめなら OSC 52 端末エスケープシーケンスにフォールバックします（SSH 越しでもこれが使われます）。どれを選んだかは `oops doctor` で確認できます。
+- `retention_days`（標準は 7）は、閉じたタブがログに最後に書き込んだ時点から数えます。古いログは、タブが記録を始めるときに削除されます。`false` にすると、閉じたタブのログは 50 MB の上限で削除されるまで残ります。
 - 自分で指定した `clipboard:` のコマンドは、独自のプロセスグループで 5 秒のタイムアウト付きで実行されます。そのため端末の読み取りや設定（パスワード入力、`stty` など）はできません。コピー中の Ctrl-C もそのコマンドには届きません。
 
 組み込みのマスク対象: AWS アクセスキー、GitHub / GitLab / Slack / npm / OpenAI・Anthropic（`sk-...`）/ Stripe / Google の API トークン、Slack の webhook URL、JWT、`Authorization` ヘッダーの値、秘密鍵ブロック（END 行がなくても）、`key`・`token`・`secret`・`password`・`passwd`・`pwd` を含む名前に代入された値、`--password <値>`・`curl -u user:pass`・`mysql -p<値>`・`docker login -p <値>` で渡されたパスワード、メールアドレス、URL 中の認証情報、公開 IPv4 アドレス（ループバックとプライベート範囲は対象外）。出力だけでなくコマンドラインにも適用されます。
@@ -215,12 +220,12 @@ clipboard: auto     # auto | pbcopy | wl-copy | xclip | xsel | clip.exe | osc52 
 1. `oops init` は、rc ファイルから `eval` する（fish では `| source` する）スニペットを出力します。まだ記録されていない端末の対話シェルでは、シェルを `oops record` の下で再起動します。
 2. `oops record` は、Ruby 製の小さな pty 中継です。キー入力とシェルの出力をそのまま通し、ウィンドウのリサイズをシェルに伝えます。
 3. シェルのフック（zsh は `preexec`/`precmd`、bash は `DEBUG` トラップと `PROMPT_COMMAND`、fish は `fish_preexec`/`fish_postexec` イベント）が、各コマンドの前後に目に見えない APC マーカーを出力します。中継がそれを取り除くので、端末には見えません。
-4. コマンドが終わるたびに、中継は 1 行の JSON（コマンド、ディレクトリ、時刻、終了コード、生の出力）をタブごとのログに追記します。置き場所は `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/` です。出力は 1 コマンドあたり 1 MB まで（末尾を残す）。各タブのログは 50 MB までで、超えると新しいコマンドだけを残して書き直されます（約 37 MiB まで縮む）。タブが記録を始めるとき、閉じたタブのログは古い順に、全ログの合計が 50 MB 以下になるまで削除されます。開いているタブのログは削除されないので、忙しいタブが複数あると合計がそれを超えることがあります。
+4. コマンドが終わるたびに、中継は 1 行の JSON（コマンド、ディレクトリ、時刻、終了コード、生の出力）をタブごとのログに追記します。置き場所は `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/` です。出力は 1 コマンドあたり 1 MB まで（末尾を残す）。各タブのログは 50 MB までで、超えると新しいコマンドだけを残して書き直されます（約 37 MiB まで縮む）。タブが記録を始めるとき、閉じたタブのログのうち `retention_days`（標準は 7 日）を過ぎたものが削除され、続いて残りが古い順に、全ログの合計が 50 MB 以下になるまで削除されます。開いているタブのログは削除されないので、忙しいタブが複数あると合計がそれを超えることがあります。
 5. `oops` は現在のタブのログの末尾を読み、テキストを整えてマスクし、コードブロックを組み立ててクリップボードに渡します。コマンドを再実行することはありません。
 
 ## プライバシーとセキュリティ
 
-- セッションログには、記録されたすべてのコマンドの生の出力が**マスクされないまま**入っています。マスクと置換テーブルはコピーするときにだけ適用されます。ログは `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/` にあり、あなただけが読めます（ファイルは 0600、ディレクトリは 0700）。すべて削除するには `rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/oops"` を実行します（標準では `rm -rf ~/.local/state/oops`）。ディスクに残したくない秘密情報を表示する前には `oops pause` を使ってください。
+- セッションログには、記録されたすべてのコマンドの生の出力が**マスクされないまま**入っています。マスクと置換テーブルはコピーするときにだけ適用されます。ログは `${XDG_STATE_HOME:-~/.local/state}/oops/sessions/` にあり、あなただけが読めます（ファイルは 0600、ディレクトリは 0700）。閉じたタブのログは 7 日後に削除されます（`retention_days`）。`oops clear` ですぐに削除でき、`oops clear --all` なら今のタブのログも空にします。開いている他のタブのログも含めてすべて削除するには `rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/oops"` を実行します（標準では `rm -rf ~/.local/state/oops`）。ディスクに残したくない秘密情報を表示する前には `oops pause` を使ってください。
 - セキュリティ上の問題を非公開で報告する方法は [SECURITY.ja.md](SECURITY.ja.md) を見てください。公開の issue には書かないでください。
 - 記録される出力は信頼できません。実行したプログラムは、oops のマーカーに見せかけたテキストを出力できます。そのため oops は、`oops pause` / `oops resume` が作るフラグファイルと一致する一時停止・再開マーカーにだけ従います。出力によって黙って記録を止められることはありません。ただし、プログラムがログ上でコマンドの開始と終了の位置を偽装することはできるので、貼り付ける内容は確認してください。
 
@@ -277,11 +282,11 @@ bundle exec exe/oops doctor
 
 ```sh
 gem build oops-cli.gemspec
-gem install ./oops-cli-0.2.0.gem     # ファイル名は lib/oops/version.rb に合わせる
+gem install ./oops-cli-0.3.0.gem     # ファイル名は lib/oops/version.rb に合わせる
 rbenv rehash                         # rbenv を使う場合のみ
 ```
 
-- gem は Ruby のバージョンごとに入ります。新しいタブが、インストールした Ruby とは別の Ruby を使っていると（たとえばリポジトリは 4.0.9 を指定しているのに、標準の Ruby が 3.3.5 の場合）、シェルの起動時に oops が見つからなくなります（bash では `bash: oops: command not found`、zsh では `command not found: oops` と出ます）。その Ruby でも `gem install` を実行してください（例: `RBENV_VERSION=3.3.5 gem install ./oops-cli-0.2.0.gem`）。
+- gem は Ruby のバージョンごとに入ります。新しいタブが、インストールした Ruby とは別の Ruby を使っていると（たとえばリポジトリは 4.0.9 を指定しているのに、標準の Ruby が 3.3.5 の場合）、シェルの起動時に oops が見つからなくなります（bash では `bash: oops: command not found`、zsh では `command not found: oops` と出ます）。その Ruby でも `gem install` を実行してください（例: `RBENV_VERSION=3.3.5 gem install ./oops-cli-0.3.0.gem`）。
 - 変更のたびに入れ直してください。インストールされた gem はコピーで、チェックアウトへのリンクではありません。
 - 削除するには `gem uninstall oops-cli` です。
 - `eval "$(oops init zsh)"` は、プロンプトで打つだけでなく rc ファイルに書いてください。記録されるシェルは rc ファイルを読み直すため、行がないとフックが入りません（`oops doctor` に `hooks: missing` と出ます）。
@@ -292,14 +297,36 @@ rbenv rehash                         # rbenv を使う場合のみ
 
 リリース前の手動チェックリスト:
 
-- Ghostty、Terminal.app、VS Code の統合ターミナルで、マーカーのゴミが表示されない。
+- Ghostty、Terminal.app、iTerm2、VS Code の統合ターミナルで、マーカーのゴミが表示されない。
 - vim、less、全画面の端末アプリが、ウィンドウをリサイズしても追従する。
 - 記録中のタブで `exec zsh` しても、2 つ目の記録が始まらない。
 - 記録中のタブから `code .` で開いた VS Code のターミナルが、独立して記録される。
 
 ## コントリビュート
 
-バグ報告、アイデア、プルリクエストを歓迎します。[CONTRIBUTING.ja.md](CONTRIBUTING.ja.md) を読んでください。`good first issue` のラベルが付いた issue が、始めやすい入口です。
+バグ報告、アイデア、プルリクエストを歓迎します。[CONTRIBUTING.ja.md](CONTRIBUTING.ja.md) を読んでください。`good first issue` のラベルが付いた issue が、始めやすい入口です。プルリクエストには、テストと rubocop の結果、新しいタブでの動作確認を必ず貼ってください（[プルリクエストに必ず貼るもの](CONTRIBUTING.ja.md#プルリクエストに必ず貼るもの)）。
+
+## 貢献してくれた人たち
+
+手伝ってくれたみなさん、ありがとうございます（[絵文字の意味](https://allcontributors.org/docs/en/emoji-key)）。追加するときは、issue かプルリクエストに `@all-contributors please add @<ユーザー名> for <貢献の種類>` とコメントしてください。
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ysb3996-blip"><img src="https://avatars.githubusercontent.com/u/257992595?v=4?s=80" width="80px;" alt="ysb3996-blip"/><br /><sub><b>ysb3996-blip</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Code">💻</a> <a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Documentation">📖</a> <a href="https://github.com/ysb3996-blip/oops/commits?author=ysb3996-blip" title="Tests">⚠️</a> <a href="#maintenance-ysb3996-blip" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ricky9408"><img src="https://avatars.githubusercontent.com/u/49530170?v=4?s=80" width="80px;" alt="Sanghyuk Lee"/><br /><sub><b>Sanghyuk Lee</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=ricky9408" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agenticsymphony-tech"><img src="https://avatars.githubusercontent.com/u/326739730?v=4?s=80" width="80px;" alt="agenticsymphony-tech"/><br /><sub><b>agenticsymphony-tech</b></sub></a><br /><a href="https://github.com/ysb3996-blip/oops/commits?author=agenticsymphony-tech" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ## ライセンス
 

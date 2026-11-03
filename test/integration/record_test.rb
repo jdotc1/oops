@@ -134,6 +134,41 @@ class RecordIntegrationTest < Minitest::Test
     refute_includes @out, "\e_oops;"
   end
 
+  def dead_pid
+    pid = Process.spawn("true")
+    Process.wait(pid)
+    pid
+  end
+
+  # A closed tab's log, last written days ago.
+  def old_log(days)
+    dir = "#{@home}/state/oops/sessions"
+    FileUtils.mkdir_p(dir)
+    path = "#{dir}/20260101-000000-#{dead_pid}.jsonl"
+    File.write(path, "")
+    File.utime(Time.now - (days * 86_400), Time.now - (days * 86_400), path)
+    path
+  end
+
+  def test_new_tab_deletes_closed_tabs_logs_older_than_seven_days
+    stale = old_log(8)
+    recent = old_log(6)
+    spawn_recorded(BASH)
+    type(%(echo al""ive\n))
+    wait_for(/alive/)
+    refute File.exist?(stale), "a closed tab's log past retention_days is deleted"
+    assert File.exist?(recent)
+  end
+
+  def test_retention_days_false_keeps_old_logs
+    File.write("#{@home}/cfg/oops/config.yml", "retention_days: false\n")
+    stale = old_log(400)
+    spawn_recorded(BASH)
+    type(%(echo al""ive\n))
+    wait_for(/alive/)
+    assert File.exist?(stale)
+  end
+
   def test_unwritable_log_dir_keeps_shell_working
     FileUtils.mkdir_p("#{@home}/state/oops")
     File.write("#{@home}/state/oops/sessions", "not a dir")

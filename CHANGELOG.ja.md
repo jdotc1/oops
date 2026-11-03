@@ -5,6 +5,11 @@
 ## 未リリース
 
 - `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。
+
+## 0.3.0 - 2026-11-02
+
+- `oops clear` で閉じたタブのログを削除できます。`oops clear --all` は今のタブのログも空にします（[#42](https://github.com/ysb3996-blip/oops/issues/42)）。
+- 変更: 閉じたタブのログは、最後のコマンドから 7 日たつと、タブが記録を始めるときに削除されるようになりました。日数は設定の `retention_days` で変えられます。`retention_days: false` にすると、50 MB の上限までは残ります（[#42](https://github.com/ysb3996-blip/oops/issues/42)）。
 - fish に対応しました。`~/.config/fish/config.fish` に `oops init fish | source` を足します（[#9](https://github.com/ysb3996-blip/oops/issues/9)）。
 - zsh のプラグインマネージャー（antidote・zinit・Oh My Zsh など）向けに `oops.plugin.zsh` を追加。clone したリポジトリの oops を動かすので、gem のインストールはいりません。
 - Homebrew tap を用意しました: `brew install ysb3996-blip/oops/oops`。Homebrew の Ruby で oops を動かします。

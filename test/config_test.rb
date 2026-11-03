@@ -6,6 +6,7 @@ class ConfigTest < Minitest::Test
     assert_equal({}, c.replace)
     assert_equal [], c.secrets
     assert_equal "auto", c.clipboard
+    assert_equal 7, c.retention_days
     assert_equal [], c.warnings
   end
 
@@ -121,6 +122,31 @@ class PathsTest < Minitest::Test
       File.chmod(0o755, "#{d}/oops/sessions")
       dir = Oops::Paths.ensure_sessions_dir!(env: { "XDG_STATE_HOME" => d })
       assert_equal 0o700, File.stat(dir).mode & 0o777
+    end
+  end
+
+  def test_retention_days
+    Dir.mktmpdir do |d|
+      path = File.join(d, "c.yml")
+      { "30" => 30, "1" => 1, "false" => nil }.each do |yaml, want|
+        File.write(path, "retention_days: #{yaml}\n")
+        c = Oops::Config.new(path)
+        want.nil? ? assert_nil(c.retention_days, yaml) : assert_equal(want, c.retention_days, yaml)
+        assert_equal [], c.warnings, yaml
+      end
+    end
+  end
+
+  def test_invalid_retention_days_warns_and_keeps_the_default
+    Dir.mktmpdir do |d|
+      path = File.join(d, "c.yml")
+      %w[0 -3 1.5 week true].each do |yaml|
+        File.write(path, "retention_days: #{yaml}\n")
+        c = Oops::Config.new(path)
+        assert_equal 7, c.retention_days, yaml
+        assert_equal ["retention_days must be a whole number of days (at least 1) or false; using 7"],
+                     c.warnings, yaml
+      end
     end
   end
 end
