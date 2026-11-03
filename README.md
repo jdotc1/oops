@@ -114,13 +114,14 @@ Options for `oops`, `oops N` and `oops err`:
 | `--head N` | Keep only the first N output lines (with `--tail`, keeps both ends) |
 | `--time` | Add the time each command started as a `# 2026-10-31 19:30:09 +09:00` line |
 | `--output-only` | Leave out the `$ command` line and copy only the output |
+| `-p`, `--print` | Write the text to stdout instead of the clipboard (no `copied:` line) |
 | `--show-secrets` | Do not mask secrets and do not apply the replace table |
 
 `N` must be a positive integer. Specify the command count once, either as a positional `N` or with `-n N`; combining them or repeating `-n` is a usage error. If fewer matching commands are available, oops copies those it finds. `-n` can be combined with the formatting options above.
 
 `oops` never copies itself: if the previous command was `oops`, you get the command before it.
 
-Exit codes: `0` copied, `1` nothing copied (not recording, no command yet, no failed command, paused, or the clipboard command failed), `2` usage error.
+Exit codes: `0` copied (or printed with `--print`), `1` nothing copied (not recording, no command yet, no failed command, paused, or the clipboard command failed), `2` usage error.
 
 ### Default output
 

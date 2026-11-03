@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)).
+
 ## 0.3.0 - 2026-11-02
 
 - `oops clear` deletes the logs of closed tabs, and `oops clear --all` also empties the current tab's log ([#42](https://github.com/ysb3996-blip/oops/issues/42)).

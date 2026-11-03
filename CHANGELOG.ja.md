@@ -2,6 +2,10 @@
 
 [English](CHANGELOG.md) | 日本語
 
+## 未リリース
+
+- `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。
+
 ## 0.3.0 - 2026-11-02
 
 - `oops clear` で閉じたタブのログを削除できます。`oops clear --all` は今のタブのログも空にします（[#42](https://github.com/ysb3996-blip/oops/issues/42)）。
