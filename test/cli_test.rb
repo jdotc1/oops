@@ -28,8 +28,7 @@ class CLITest < Minitest::Test
     assert_includes out.string, "oops init <shell> | pause | resume | status | clear [--all] | doctor"
     assert_includes out.string, "--time"
     assert_includes out.string, "--output-only"
-    assert_includes out.string, "--print"
-    assert_includes out.string, "-p"
+    assert_includes out.string, "-p, --print"
   end
 
   def test_init_prints_snippet_with_absolute_bin
@@ -364,6 +363,11 @@ class CLICopyTest < Minitest::Test
       assert_equal [0, expected, ""], run_cli("err", "--github", "--print")
       refute File.exist?(@clip)
     end
+  end
+
+  def test_print_masks_secrets
+    add("echo $T", "ghp_#{'a' * 36}\r\n")
+    assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", ""], run_cli("-p")
   end
 
   def test_print_works_when_no_clipboard_tool_is_available
