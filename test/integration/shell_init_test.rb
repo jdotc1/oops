@@ -692,6 +692,8 @@ class ShellInitIntegrationTest < Minitest::Test
         [ -r "$HOME/.bashrc" ] && builtin source "$HOME/.bashrc"
         builtin unset __ghostty_bash_flags
       fi
+      __ghostty_hook() { :; }
+      PROMPT_COMMAND="${PROMPT_COMMAND};__ghostty_hook 2>/dev/null"
       echo "loaded $$" >> "#{@home}/ghostty.log"
     BASH
     "#{dir}/ghostty.bash"
@@ -707,6 +709,20 @@ class ShellInitIntegrationTest < Minitest::Test
     # The outer shell is replaced while it runs ~/.bashrc, before it gets to
     # the integration, so the restarted shell is the one that loads it.
     assert_equal 1, ghostty_loads
+    # bash shows its PROMPT_COMMAND entry as `__ghostty_hook 2> /dev/null`,
+    # which must not be taken for the first command.
+    assert_equal([["echo recorded-$((1+1))", "recorded-2\n"]], records.map { |r| [r.cmd, r.output.delete("\r")] })
+  end
+
+  def test_bash_loads_ghosttys_integration_under_set_u
+    file = install_fake_bash_ghostty
+    @env.update("GHOSTTY_BASH_INJECT" => "1", "GHOSTTY_RESOURCES_DIR" => "#{@home}/ghostty")
+    write_bashrc(before: "set -u\n")
+    spawn_shell("bash", "--rcfile", file, "-i")
+    run_line("case $- in *u*) echo nounset-$((1+1)) ;; esac")
+    assert_equal 1, ghostty_loads
+    refute_includes @out, "unbound variable"
+    assert_equal(["nounset-2\n"], records.map { |r| r.output.delete("\r") })
   end
 
   def test_bash_recorded_shell_does_not_load_ghosttys_integration_when_it_is_off

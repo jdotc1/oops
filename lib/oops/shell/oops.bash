@@ -138,9 +138,13 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
         [ "${BASH_SUBSHELL:-0}" = 0 ]; then
         case $BASH_COMMAND in
           __oops_precmd*) ;; # empty line: the prompt is drawn again
+          # Ghostty's PS0 hook, run in this shell by bash 5.3 before the line.
+          __ghostty_preexec_hook) ;;
           *)
-            case $__oops_tail in
-              *"$BASH_COMMAND"*) ;; # entries after a rewrap, see __oops_wrap
+            # Entries after a rewrap, see __oops_wrap. Blanks are ignored:
+            # bash prints `a 2>/dev/null` back as `a 2> /dev/null`.
+            case ${__oops_tail//[[:space:]]/} in
+              *"${BASH_COMMAND//[[:space:]]/}"*) ;;
               *)
                 __oops_armed=
                 __oops_tail=
@@ -349,7 +353,11 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
       [ -n "${GHOSTTY_RESOURCES_DIR:-}" ] &&
       [ -r "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash" ]; then
       __oops_ghostty_loaded=1
+      # It reads unset variables, which `set -u` earlier in ~/.bashrc rejects.
+      case $- in *u*) __oops_nounset=1 && set +u ;; *) __oops_nounset= ;; esac
       builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash"
+      if [ -n "$__oops_nounset" ]; then set -u; fi
+      unset __oops_nounset
     fi
   fi
   unset -f __oops_runs_script
