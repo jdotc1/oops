@@ -68,6 +68,16 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
     if __oops_runs_script; then
       : # not a prompt to record; run the script as asked
     elif command -v "$__oops_bin" >/dev/null 2>&1; then
+      # Ghostty injects its bash integration by starting bash in POSIX mode
+      # with ENV pointing at it; that file sources the rc files (this one)
+      # with __ghostty_bash_flags set, and loads the integration afterwards.
+      # The restarted shell is not injected, so note whether this one is;
+      # the restarted shell loads the integration again (see the end).
+      if [ -n "${__ghostty_bash_flags+x}" ]; then
+        export __OOPS_GHOSTTY=1
+      else
+        unset __OOPS_GHOSTTY
+      fi
       # execfail: if the exec fails anyway, keep this shell running.
       __oops_execfail=$(shopt -p execfail || :)
       shopt -s execfail
@@ -128,9 +138,13 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
         [ "${BASH_SUBSHELL:-0}" = 0 ]; then
         case $BASH_COMMAND in
           __oops_precmd*) ;; # empty line: the prompt is drawn again
+          # Ghostty's PS0 hook, run in this shell by bash 5.3 before the line.
+          __ghostty_preexec_hook) ;;
           *)
-            case $__oops_tail in
-              *"$BASH_COMMAND"*) ;; # entries after a rewrap, see __oops_wrap
+            # Entries after a rewrap, see __oops_wrap. Blanks are ignored:
+            # bash prints `a 2>/dev/null` back as `a 2> /dev/null`.
+            case ${__oops_tail//[[:space:]]/} in
+              *"${BASH_COMMAND//[[:space:]]/}"*) ;;
               *)
                 __oops_armed=
                 __oops_tail=
@@ -330,6 +344,20 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
         *__oops_precmd* | *__oops_install*) ;;
         *) PROMPT_COMMAND="${PROMPT_COMMAND:-}"$'\n'"$__oops_e_install" ;;
       esac
+    fi
+
+    # The shell this one replaced was injected with Ghostty's integration
+    # (see above); load it here, after our hooks, as Ghostty documents for a
+    # manual setup. Once per shell process.
+    if [ -n "${__OOPS_GHOSTTY:-}" ] && [ -z "${__oops_ghostty_loaded:-}" ] &&
+      [ -n "${GHOSTTY_RESOURCES_DIR:-}" ] &&
+      [ -r "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash" ]; then
+      __oops_ghostty_loaded=1
+      # It reads unset variables, which `set -u` earlier in ~/.bashrc rejects.
+      case $- in *u*) __oops_nounset=1 && set +u ;; *) __oops_nounset= ;; esac
+      builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash"
+      if [ -n "$__oops_nounset" ]; then set -u; fi
+      unset __oops_nounset
     fi
   fi
   unset -f __oops_runs_script

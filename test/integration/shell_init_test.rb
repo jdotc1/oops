@@ -22,7 +22,7 @@ class ShellInitIntegrationTest < Minitest::Test
              # (group-writable dirs on fpath) it stops at an "insecure directories" prompt.
              "skip_global_compinit" => "1" }
     %w[OOPS_TTY OOPS_SESSION OOPS_DISABLE __OOPS_SEQ __OOPS_PID ZDOTDIR PROMPT_COMMAND BASH_ENV ENV
-       HISTCONTROL HISTFILE __OOPS_GHOSTTY XDG_DATA_DIRS XDG_DATA_HOME
+       HISTCONTROL HISTFILE __OOPS_GHOSTTY XDG_DATA_DIRS XDG_DATA_HOME GHOSTTY_BASH_INJECT GHOSTTY_RESOURCES_DIR
        GHOSTTY_SHELL_INTEGRATION_XDG_DIR].each { |name| @env[name] = nil }
     @prompts = 0
   end
@@ -672,6 +672,74 @@ class ShellInitIntegrationTest < Minitest::Test
     @env.update("GHOSTTY_RESOURCES_DIR" => "#{@home}/ghostty", "__OOPS_GHOSTTY" => "1")
     write_zshrc
     spawn_shell("zsh", "-i")
+    run_line("echo recorded-$((1+1))")
+    assert_equal 1, session_logs.size
+    assert_equal 0, ghostty_loads
+  end
+
+  # A stand-in for Ghostty's bash integration. Ghostty starts bash in POSIX
+  # mode with ENV pointing at it (bash 4+; bash 3.2 ignores ENV there); the
+  # tests use --rcfile instead, so they run on bash 3.2 too. Like the real
+  # one it sources ~/.bashrc with __ghostty_bash_flags set and loads itself
+  # afterwards. It logs every shell that gets that far.
+  def install_fake_bash_ghostty
+    dir = "#{@home}/ghostty/shell-integration/bash"
+    FileUtils.mkdir_p(dir)
+    File.write("#{dir}/ghostty.bash", <<~BASH)
+      if [ -n "$GHOSTTY_BASH_INJECT" ]; then
+        builtin declare __ghostty_bash_flags="$GHOSTTY_BASH_INJECT"
+        builtin unset ENV GHOSTTY_BASH_INJECT
+        [ -r "$HOME/.bashrc" ] && builtin source "$HOME/.bashrc"
+        builtin unset __ghostty_bash_flags
+      fi
+      __ghostty_hook() { :; }
+      PROMPT_COMMAND="${PROMPT_COMMAND};__ghostty_hook 2>/dev/null"
+      echo "loaded $$" >> "#{@home}/ghostty.log"
+    BASH
+    "#{dir}/ghostty.bash"
+  end
+
+  def test_bash_recorded_shell_loads_ghosttys_integration_again
+    file = install_fake_bash_ghostty
+    @env.update("GHOSTTY_BASH_INJECT" => "1", "GHOSTTY_RESOURCES_DIR" => "#{@home}/ghostty")
+    write_bashrc
+    spawn_shell("bash", "--rcfile", file, "-i")
+    run_line("echo recorded-$((1+1))")
+    assert_equal 1, session_logs.size, "the tab should be recorded"
+    # The outer shell is replaced while it runs ~/.bashrc, before it gets to
+    # the integration, so the restarted shell is the one that loads it.
+    assert_equal 1, ghostty_loads
+    # bash shows its PROMPT_COMMAND entry as `__ghostty_hook 2> /dev/null`,
+    # which must not be taken for the first command.
+    assert_equal([["echo recorded-$((1+1))", "recorded-2\n"]], records.map { |r| [r.cmd, r.output.delete("\r")] })
+  end
+
+  def test_bash_loads_ghosttys_integration_under_set_u
+    file = install_fake_bash_ghostty
+    @env.update("GHOSTTY_BASH_INJECT" => "1", "GHOSTTY_RESOURCES_DIR" => "#{@home}/ghostty")
+    write_bashrc(before: "set -u\n")
+    spawn_shell("bash", "--rcfile", file, "-i")
+    run_line("case $- in *u*) echo nounset-$((1+1)) ;; esac")
+    assert_equal 1, ghostty_loads
+    refute_includes @out, "unbound variable"
+    assert_equal(["nounset-2\n"], records.map { |r| r.output.delete("\r") })
+  end
+
+  def test_bash_recorded_shell_does_not_load_ghosttys_integration_when_it_is_off
+    install_fake_bash_ghostty
+    @env["GHOSTTY_RESOURCES_DIR"] = "#{@home}/ghostty"
+    write_bashrc
+    spawn_shell("bash", "-i")
+    run_line("echo recorded-$((1+1))")
+    assert_equal 1, session_logs.size
+    assert_equal 0, ghostty_loads
+  end
+
+  def test_bash_stale_flag_does_not_load_ghosttys_integration
+    install_fake_bash_ghostty
+    @env.update("GHOSTTY_RESOURCES_DIR" => "#{@home}/ghostty", "__OOPS_GHOSTTY" => "1")
+    write_bashrc
+    spawn_shell("bash", "-i")
     run_line("echo recorded-$((1+1))")
     assert_equal 1, session_logs.size
     assert_equal 0, ghostty_loads
