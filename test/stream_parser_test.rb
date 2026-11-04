@@ -230,7 +230,9 @@ class StreamParserTest < Minitest::Test
 
   def test_fullscreen_placeholder_names_the_command
     { "git log" => "git", "/usr/bin/vim notes.txt" => "vim", "GIT_PAGER=less LANG=C git log" => "git",
-      "  less  file" => "less", "FOO=1" => nil, "" => nil }.each do |line, name|
+      "  less  file" => "less", "FOO=1" => nil, "" => nil,
+      "echo before; less notes.txt" => nil, "git log | less" => nil, "make && vim log" => nil,
+      "(cd x && vim y)" => nil, "vim $(ls *.md)" => nil, "a\nvim" => nil }.each do |line, name|
       p = Oops::StreamParser.new(max_bytes: 100) { |r| @records << r }
       p.feed("#{start(1, cmd: line)}\e[?1049hX\e[?1049l#{fin(1)}")
       expected = name ? "[#{name}: full-screen output omitted]\n" : Oops::StreamParser::OMITTED

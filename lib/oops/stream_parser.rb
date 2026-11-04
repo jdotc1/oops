@@ -34,6 +34,9 @@ module Oops
   class StreamParser
     OMITTED = "[full-screen app output omitted]\n".b.freeze
     ASSIGNMENT = /\A[A-Za-z_][A-Za-z0-9_]*=/n
+    # In a line with several commands the first word may not be the program
+    # that went full screen (echo a; less b), so such lines get no name.
+    SEVERAL_COMMANDS = /[;&|()`{}\n]|\$\(/n
     MAX_HELD_MARKER = 65_536
 
     PREFIX = Marker::PREFIX
@@ -337,7 +340,10 @@ module Oops
     # directory. The program that switched screens may be one it started, as
     # git starts less, so this is the command the user typed, not the pager.
     def omitted_line(command_line)
-      word = command_line.to_s.b.split.find { |w| !w.match?(ASSIGNMENT) }
+      line = command_line.to_s.b
+      return OMITTED if line.match?(SEVERAL_COMMANDS)
+
+      word = line.split.find { |w| !w.match?(ASSIGNMENT) }
       return OMITTED unless word
 
       "[#{File.basename(word)}: full-screen output omitted]\n".b
