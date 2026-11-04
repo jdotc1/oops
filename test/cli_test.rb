@@ -395,7 +395,7 @@ class CLICopyTest < Minitest::Test
 
   def test_clear_deletes_closed_tabs_logs_and_keeps_this_tab
     logs = [closed_tab_log, closed_tab_log]
-    open_tab = File.join(sessions_dir, "20260101-000000-#{Process.pid}.jsonl")
+    open_tab = Oops::SessionLog.new_path(sessions_dir)
     File.write(open_tab, "x")
     add("c1", "one\r\n")
     assert_equal [0, "removed 2 logs of closed tabs\n", ""], run_clear

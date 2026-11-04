@@ -2,8 +2,8 @@ require "test_helper"
 require "tmpdir"
 
 class SessionLogTest < Minitest::Test
-  def rec(seq, cmd: "c#{seq}", exit: 0, out: "o#{seq}")
-    Oops::Record.new(seq: seq, cmd: cmd, cwd: "/", started_at: 0, ended_at: 0, exit: exit,
+  def rec(seq, cmd: "c#{seq}", exit: 0, out: "o#{seq}", ended: 0)
+    Oops::Record.new(seq: seq, cmd: cmd, cwd: "/", started_at: ended, ended_at: ended, exit: exit,
                      output: out.b, dropped_bytes: 0, fullscreen: false)
   end
 
@@ -234,7 +234,7 @@ class SessionLogTest < Minitest::Test
   def test_rotate_deletes_oldest_dead_sessions_only
     Dir.mktmpdir do |d|
       %w[20260101-000000-1 20260102-000000-2 20260103-000000-3].each { |n| File.write("#{d}/#{n}.jsonl", "x" * 10) }
-      Oops::SessionLog.rotate!(d, max_bytes: 25, alive: ->(pid) { pid == 1 })
+      Oops::SessionLog.rotate!(d, max_bytes: 25, alive: ->(pid, _) { pid == 1 })
       assert_equal %w[20260101-000000-1.jsonl 20260103-000000-3.jsonl], Dir.children(d).sort
     end
   end
@@ -246,7 +246,7 @@ class SessionLogTest < Minitest::Test
       File.write("#{d}/20260101-000000-1.jsonl.status", "")
       File.write("#{d}/other.jsonl", "x" * 100)
       File.write("#{d}/20260102-000000-2.jsonl", "x" * 10)
-      Oops::SessionLog.rotate!(d, max_bytes: 5, alive: ->(pid) { pid == 2 })
+      Oops::SessionLog.rotate!(d, max_bytes: 5, alive: ->(pid, _) { pid == 2 })
       assert_equal %w[20260102-000000-2.jsonl other.jsonl], Dir.children(d).sort
     end
   end
@@ -259,7 +259,7 @@ class SessionLogTest < Minitest::Test
         File.utime(now - (days * 86_400), now - (days * 86_400), "#{d}/#{name}.jsonl")
       end
       File.write("#{d}/20260101-000000-1.jsonl.status", "ok")
-      Oops::SessionLog.rotate!(d, max_age: 7 * 86_400, now: now, alive: ->(pid) { pid == 1 })
+      Oops::SessionLog.rotate!(d, max_age: 7 * 86_400, now: now, alive: ->(pid, _) { pid == 1 })
       assert_equal %w[20260101-000000-1.jsonl 20260101-000000-1.jsonl.status 20260103-000000-3.jsonl],
                    Dir.children(d).sort
     end
@@ -269,7 +269,7 @@ class SessionLogTest < Minitest::Test
     Dir.mktmpdir do |d|
       File.write("#{d}/20260101-000000-1.jsonl", "x")
       File.utime(Time.now - (400 * 86_400), Time.now - (400 * 86_400), "#{d}/20260101-000000-1.jsonl")
-      Oops::SessionLog.rotate!(d, alive: ->(_) { false })
+      Oops::SessionLog.rotate!(d, alive: ->(_, _) { false })
       assert_equal %w[20260101-000000-1.jsonl], Dir.children(d)
     end
   end
@@ -279,7 +279,7 @@ class SessionLogTest < Minitest::Test
       %w[20260101-000000-1 20260102-000000-2 20260103-000000-3].each { |n| File.write("#{d}/#{n}.jsonl", "x") }
       File.write("#{d}/20260102-000000-2.jsonl.paused", "")
       File.write("#{d}/other.jsonl", "x")
-      assert_equal 2, Oops::SessionLog.clear!(d, alive: ->(pid) { pid == 3 })
+      assert_equal 2, Oops::SessionLog.clear!(d, alive: ->(pid, _) { pid == 3 })
       assert_equal %w[20260103-000000-3.jsonl other.jsonl], Dir.children(d).sort
     end
   end
@@ -296,6 +296,75 @@ class SessionLogTest < Minitest::Test
       assert_equal 0, File.size(log.path)
       assert log.paused?
       assert_equal [], log.last(1)
+    end
+  end
+
+  def test_rotate_and_clear_pass_the_time_the_log_was_named
+    Dir.mktmpdir do |d|
+      File.write("#{d}/20260102-030405-7.jsonl", "x")
+      seen = []
+      alive = lambda do |pid, opened_at|
+        seen << [pid, opened_at]
+        true
+      end
+      Oops::SessionLog.rotate!(d, max_bytes: 0, alive: alive)
+      Oops::SessionLog.clear!(d, alive: alive)
+      assert_equal [[7, Time.new(2026, 1, 2, 3, 4, 5)]] * 2, seen
+    end
+  end
+
+  def test_session_alive_needs_a_live_process_that_started_before_the_log
+    opened = Time.new(2026, 1, 2, 3, 4, 5)
+    check = lambda do |live, started|
+      Oops::SessionLog.session_alive?(42, opened, alive: ->(_) { live }, started_at: ->(_) { started })
+    end
+    assert check.call(true, opened - 3600), "the recorder started before it named the log"
+    assert check.call(true, opened + 2), "a few seconds of slack"
+    refute check.call(true, opened + 60), "a reused process id belongs to a newer process"
+    assert check.call(true, nil), "an unknown start time keeps the log"
+    refute check.call(false, opened - 3600), "the process is gone"
+  end
+
+  def test_process_started_at_reads_the_start_time_of_a_process
+    started = Oops::SessionLog.process_started_at(Process.pid)
+    assert_kind_of Time, started
+    assert_operator started, :<=, Time.now
+  end
+
+  def test_process_started_at_is_nil_for_a_process_that_is_gone
+    pid = Process.spawn("true")
+    Process.wait(pid)
+    assert_nil Oops::SessionLog.process_started_at(pid)
+  end
+
+  def test_append_drops_records_older_than_max_age
+    Dir.mktmpdir do |d|
+      now = Time.at(1_800_000_000)
+      log = Oops::SessionLog.new("#{d}/s.jsonl", max_age: 86_400)
+      File.write(log.path, [rec(1, ended: now.to_i - (3 * 86_400)), rec(2, ended: now.to_i - 3600)]
+                             .map(&:to_json_line).join)
+      log.append(rec(3, ended: now.to_i), now: now)
+      assert_equal [2, 3], log.last(5).map(&:seq)
+    end
+  end
+
+  def test_append_checks_the_age_of_records_at_most_once_an_hour
+    Dir.mktmpdir do |d|
+      t0 = Time.at(1_800_000_000)
+      log = Oops::SessionLog.new("#{d}/s.jsonl", max_age: 100)
+      log.append(rec(1, ended: t0.to_i), now: t0)
+      log.append(rec(2, ended: t0.to_i + 1800), now: t0 + 1800)
+      assert_equal [1, 2], log.last(5).map(&:seq)
+      log.append(rec(3, ended: t0.to_i + 3600), now: t0 + 3600)
+      assert_equal [3], log.last(5).map(&:seq)
+    end
+  end
+
+  def test_append_without_max_age_keeps_old_records
+    with_log do |log|
+      log.append(rec(1, ended: 0))
+      log.append(rec(2, ended: Time.now.to_i))
+      assert_equal [1, 2], log.last(5).map(&:seq)
     end
   end
 end
