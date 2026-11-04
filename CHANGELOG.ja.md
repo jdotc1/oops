@@ -2,6 +2,10 @@
 
 [English](CHANGELOG.md) | 日本語
 
+## 未リリース
+
+- Ghostty 上の bash: Ghostty が外側のシェルにシェル統合を入れていた場合、記録される側のシェルでもう一度読み込むようにしました。zsh と fish はすでにそうしていました。README で bash の人に頼んでいた 1 行は、この場合は要りません（[#50](https://github.com/ysb3996-blip/oops/issues/50)）。
+
 ## 0.4.0 - 2026-11-03
 
 - `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。[@ShahadatTest](https://github.com/ShahadatTest) さんによる貢献（[#52](https://github.com/ysb3996-blip/oops/pull/52)）。

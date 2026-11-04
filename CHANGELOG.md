@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- bash in Ghostty: when Ghostty injected its shell integration into the outer shell, the recorded shell now loads it again, as zsh and fish already did. The line the README asked bash users to add is no longer needed there ([#50](https://github.com/ysb3996-blip/oops/issues/50)).
+
 ## 0.4.0 - 2026-11-03
 
 - `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)). Contributed by [@ShahadatTest](https://github.com/ShahadatTest) in [#52](https://github.com/ysb3996-blip/oops/pull/52).
