@@ -232,7 +232,10 @@ class StreamParserTest < Minitest::Test
     { "git log" => "git", "/usr/bin/vim notes.txt" => "vim", "GIT_PAGER=less LANG=C git log" => "git",
       "  less  file" => "less", "FOO=1" => nil, "" => nil,
       "echo before; less notes.txt" => nil, "git log | less" => nil, "make && vim log" => nil,
-      "(cd x && vim y)" => nil, "vim $(ls *.md)" => nil, "a\nvim" => nil }.each do |line, name|
+      "(cd x && vim y)" => nil, "vim $(ls *.md)" => nil, "a\nvim" => nil, "vim `ls`" => nil,
+      "{ vim; }" => nil, "sleep 1 & vim" => nil, %(LESS="-R -F" git log) => nil,
+      "GIT_PAGER='less -S' git log" => nil, "https://user:pw123456@localhost" => nil,
+      "a\0b" => nil, "bin/" => nil }.each do |line, name|
       p = Oops::StreamParser.new(max_bytes: 100) { |r| @records << r }
       p.feed("#{start(1, cmd: line)}\e[?1049hX\e[?1049l#{fin(1)}")
       expected = name ? "[#{name}: full-screen output omitted]\n" : Oops::StreamParser::OMITTED

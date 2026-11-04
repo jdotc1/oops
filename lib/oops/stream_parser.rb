@@ -19,8 +19,8 @@ module Oops
   # 2. Recording. Content bytes seen between a start marker and the matching
   #    end marker are stored for that command, except inside alternate-screen
   #    spans ("ESC [ ? 1049 h", "ESC [ ? 1047 h", "ESC [ ? 47 h" up to any of
-  #    the matching "l" forms), which are replaced by one line naming the
-  #    program, e.g. "[git: full-screen output omitted]". The
+  #    the matching "l" forms), which are replaced by one line, e.g.
+  #    "[git: full-screen output omitted]" (see omitted_line). The
   #    alternate-screen detector keeps its own small pending tail so that a
   #    sequence split across chunks is still recognised; this only delays
   #    storing, never forwarding.
@@ -33,7 +33,11 @@ module Oops
   # and the marker is ignored when it returns false.
   class StreamParser
     OMITTED = "[full-screen app output omitted]\n".b.freeze
+    # A shell variable assignment before the command, as in LANG=C git log.
     ASSIGNMENT = /\A[A-Za-z_][A-Za-z0-9_]*=/n
+    # Only a plain word is shown as the name. Anything else (quotes, a URL
+    # with a password, a NUL byte) is not a command name worth the risk.
+    PLAIN_WORD = %r{\A[A-Za-z0-9_.+/-]+\z}n
     # In a line with several commands the first word may not be the program
     # that went full screen (echo a; less b), so such lines get no name.
     SEVERAL_COMMANDS = /[;&|()`{}\n]|\$\(/n
@@ -344,9 +348,10 @@ module Oops
       return OMITTED if line.match?(SEVERAL_COMMANDS)
 
       word = line.split.find { |w| !w.match?(ASSIGNMENT) }
-      return OMITTED unless word
+      name = word[%r{[^/]+\z}n] if word&.match?(PLAIN_WORD)
+      return OMITTED unless name
 
-      "[#{File.basename(word)}: full-screen output omitted]\n".b
+      "[#{name}: full-screen output omitted]\n".b
     end
 
     # Index of the earliest ESC at or after from whose tail is a proper prefix
