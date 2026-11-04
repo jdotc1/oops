@@ -44,7 +44,7 @@ class StreamParserTest < Minitest::Test
   def test_fullscreen_span_omitted_but_forwarded
     fwd = @p.feed("#{start(1)}pre\e[?1049hVIMVIM\e[?1049lpost#{fin(1)}")
     assert_includes fwd, "VIMVIM"
-    assert_equal "pre[full-screen app output omitted]\npost", @records[0].output
+    assert_equal "pre[c: full-screen output omitted]\npost", @records[0].output
     assert @records[0].fullscreen
   end
 
@@ -214,7 +214,7 @@ class StreamParserTest < Minitest::Test
 
   def test_all_alt_screen_forms
     @p.feed("#{start(1)}a\e[?47hX\e[?47lb\e[?1047hY\e[?1047lc#{fin(1)}")
-    omitted = "[full-screen app output omitted]\n"
+    omitted = "[c: full-screen output omitted]\n"
     assert_equal "a#{omitted}b#{omitted}c", @records[0].output
   end
 
@@ -225,7 +225,22 @@ class StreamParserTest < Minitest::Test
     fwd << @p.feed("049")
     fwd << @p.feed("lpost#{fin(1)}")
     assert_equal "pre\e[?1049hVIM\e[?1049lpost", fwd
-    assert_equal "pre[full-screen app output omitted]\npost", @records[0].output
+    assert_equal "pre[c: full-screen output omitted]\npost", @records[0].output
+  end
+
+  def test_fullscreen_placeholder_names_the_command
+    { "git log" => "git", "/usr/bin/vim notes.txt" => "vim", "GIT_PAGER=less LANG=C git log" => "git",
+      "  less  file" => "less", "FOO=1" => nil, "" => nil }.each do |line, name|
+      p = Oops::StreamParser.new(max_bytes: 100) { |r| @records << r }
+      p.feed("#{start(1, cmd: line)}\e[?1049hX\e[?1049l#{fin(1)}")
+      expected = name ? "[#{name}: full-screen output omitted]\n" : Oops::StreamParser::OMITTED
+      assert_equal expected, @records.pop.output, line
+    end
+  end
+
+  def test_fullscreen_placeholder_survives_invalid_utf8_in_the_command
+    @p.feed("#{start(1, cmd: "vim \xFF".b)}\e[?1049hX\e[?1049l#{fin(1)}")
+    assert_equal "[vim: full-screen output omitted]\n".b, @records[0].output
   end
 
   def test_partial_alt_screen_prefix_that_is_not_one_is_stored
@@ -243,7 +258,7 @@ class StreamParserTest < Minitest::Test
   def test_end_inside_fullscreen_span_closes_it
     @p.feed("#{start(1)}a\e[?1049hTUI#{fin(1)}")
     @p.feed("#{start(2)}b#{fin(2)}")
-    assert_equal ["a[full-screen app output omitted]\n", "b"], @records.map(&:output)
+    assert_equal ["a[c: full-screen output omitted]\n", "b"], @records.map(&:output)
     assert_equal [true, false], @records.map(&:fullscreen)
   end
 
@@ -291,7 +306,7 @@ class StreamParserTest < Minitest::Test
     assert_equal expected_fwd.b, fwd
     assert_equal 2, records.size
     assert_equal({ seq: 1, cmd: "ls 世界", cwd: "/home/ü", started_at: 10, exit: 2,
-                   output: "héllo 世界\n\e[31mred\e[0m\n[full-screen app output omitted]\n" \
+                   output: "héllo 世界\n\e[31mred\e[0m\n[ls: full-screen output omitted]\n" \
                            "after\e_oops!not a marker\n\e[?10x\n".b,
                    dropped_bytes: 0, fullscreen: true }, records[0])
     assert_equal({ seq: 3, cmd: "tail", cwd: "/", started_at: 12, exit: nil,

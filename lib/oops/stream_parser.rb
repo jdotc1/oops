@@ -19,7 +19,8 @@ module Oops
   # 2. Recording. Content bytes seen between a start marker and the matching
   #    end marker are stored for that command, except inside alternate-screen
   #    spans ("ESC [ ? 1049 h", "ESC [ ? 1047 h", "ESC [ ? 47 h" up to any of
-  #    the matching "l" forms), which are replaced by one OMITTED line. The
+  #    the matching "l" forms), which are replaced by one line naming the
+  #    program, e.g. "[git: full-screen output omitted]". The
   #    alternate-screen detector keeps its own small pending tail so that a
   #    sequence split across chunks is still recognised; this only delays
   #    storing, never forwarding.
@@ -32,6 +33,7 @@ module Oops
   # and the marker is ignored when it returns false.
   class StreamParser
     OMITTED = "[full-screen app output omitted]\n".b.freeze
+    ASSIGNMENT = /\A[A-Za-z_][A-Za-z0-9_]*=/n
     MAX_HELD_MARKER = 65_536
 
     PREFIX = Marker::PREFIX
@@ -323,12 +325,22 @@ module Oops
             return
           end
           cmd.buffer << data.byteslice(pos, match.begin(0) - pos)
-          cmd.buffer << OMITTED
+          cmd.buffer << omitted_line(cmd.cmd)
           cmd.fullscreen = true
           cmd.in_span = true
         end
         pos = match.end(0)
       end
+    end
+
+    # Names the command's first word (after any VAR=value), without its
+    # directory. The program that switched screens may be one it started, as
+    # git starts less, so this is the command the user typed, not the pager.
+    def omitted_line(command_line)
+      word = command_line.to_s.b.split.find { |w| !w.match?(ASSIGNMENT) }
+      return OMITTED unless word
+
+      "[#{File.basename(word)}: full-screen output omitted]\n".b
     end
 
     # Index of the earliest ESC at or after from whose tail is a proper prefix
