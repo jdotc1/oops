@@ -236,7 +236,7 @@ retention_days: 7   # この日数より古いコマンドを削除する。fals
 - 使えるのは現在のタブだけです。閉じたタブや以前のタブのものは取り出せません。
 - OSC 52 経由（SSH やクリップボードツールがない場合）では、端末が一度に送れる量を制限します。oops は約 100 KB に切り詰めて警告します。OSC 52 は一方通行のエスケープシーケンスなので、端末がコピーを受け付けたかどうかは分かりません。無視する端末や確認を求める端末もあり、tmux では `set -g set-clipboard on` が必要です。
 - 8192 文字を超えるコマンドは、記録されるコマンドラインが切り詰められます。
-- vim・less・tmux などの全画面アプリの出力は保存されず、`[full-screen app output omitted]` に置き換わります。
+- vim・less・tmux などの全画面アプリの出力は保存されず、1 行に置き換わります。コマンドラインが 1 つのコマンドだけで、その名前が英数字と `. _ + - /` だけなら、その行にコマンド名が入ります（ページャーを通した `git log` なら `[git: full-screen output omitted]`）。そうでなければ `[full-screen app output omitted]` です。全画面になる前と後に出た行は残ります。
 - スペースで始まるコマンドラインは、zsh では記録されますが bash では記録されません（bash はそれを履歴に保存せず、oops はコマンドを履歴から読むため）。
 - [bash-preexec](https://github.com/rcaloras/bash-preexec) を使う bash（atuin や Ghostty の bash 統合の背後にあるものも含む）: oops は自前の `DEBUG` トラップを使わず、bash-preexec にフックを登録します。rc ファイルでどちらが先でも同じです。bash が履歴に保存しなかった行（`HISTCONTROL=ignorespace`、`HISTIGNORE`）は、この場合 `(not saved in history)` と記録されます。行のテキストを履歴から読むためです。bash-preexec がない場合、oops はそのような行の最初のコマンドを記録します。
 - Ghostty のシェル統合（プロンプトマーク、同じディレクトリでの新しいタブ、タイトル）は、外側のシェルにだけ入ります。入っていた場合は、zsh・fish・bash のどれでも、スニペットが記録される側のシェルにもう一度読み込みます。bash 3.2（macOS の `/bin/bash`）には Ghostty が統合を入れられないので、読み込まれません。使いたい場合は、`~/.bashrc` の oops の行の下に次の行を置きます: `[ -n "$GHOSTTY_RESOURCES_DIR" ] && source "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash"`。
