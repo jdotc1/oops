@@ -2,6 +2,11 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Fixed: a closed tab's log is no longer kept forever when its process id is reused by another process. A process that started after the log was last written is not the tab that wrote it ([#58](https://github.com/ysb3996-blip/oops/issues/58)).
+- Changed: a tab that stays open now drops commands older than `retention_days` from its own log when a command finishes, at most once an hour ([#59](https://github.com/ysb3996-blip/oops/issues/59)).
+
 ## 0.4.0 - 2026-11-03
 
 - `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)). Contributed by [@ShahadatTest](https://github.com/ShahadatTest) in [#52](https://github.com/ysb3996-blip/oops/pull/52).

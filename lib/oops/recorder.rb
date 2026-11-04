@@ -148,10 +148,11 @@ module Oops
       dir = Paths.sessions_dir(env: @env)
       @session_path = SessionLog.new_path(dir)
       Paths.ensure_sessions_dir!(env: @env)
-      rotate_logs(dir)
+      max_age = retention_seconds
+      rotate_logs(dir, max_age)
       File.open(@session_path, File::WRONLY | File::CREAT | File::APPEND, 0o600, &:itself)
       write_status("ok")
-      SessionLog.new(@session_path)
+      SessionLog.new(@session_path, max_age: max_age)
     rescue StandardError => e
       @log_failed = true
       warn_line "oops: warning: session log unavailable (#{e.message}); recording disabled"
@@ -170,10 +171,14 @@ module Oops
       end
     end
 
-    # Rotation only frees space; failing to rotate must not stop recording.
-    def rotate_logs(dir)
+    def retention_seconds
       days = Config.load(env: @env).retention_days
-      SessionLog.rotate!(dir, max_age: days && (days * 86_400))
+      days && (days * 86_400)
+    end
+
+    # Rotation only frees space; failing to rotate must not stop recording.
+    def rotate_logs(dir, max_age)
+      SessionLog.rotate!(dir, max_age: max_age)
     rescue SystemCallError
       nil
     end

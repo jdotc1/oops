@@ -1,3 +1,5 @@
+require "time"
+
 module Oops
   # Append-only JSONL log of captured commands for one shell session. A log
   # that grows past its cap is rewritten to keep only its newest records.
@@ -8,6 +10,11 @@ module Oops
     # tab is not rewritten on every command.
     TRIM_TO = 0.75
     LOG_NAME = /\A(\d{8}-\d{6})-(\d+)\.jsonl\z/
+    # `ps` rounds a start time down to the second and file systems may round
+    # mtimes; the slack keeps such rounding from closing a live tab.
+    START_SLACK = 5
+    # How often an open tab checks its log for records older than max_age.
+    AGE_CHECK_INTERVAL = 3600
 
     attr_reader :path
 
@@ -21,19 +28,43 @@ module Oops
       true
     rescue Errno::EPERM
       true
-    rescue SystemCallError
+    rescue SystemCallError, RangeError
       false
+    end
+
+    # Whether the tab whose log was last written at written_at is still open.
+    # Process ids are reused, and the recorder starts before it ever writes its
+    # log, so a live process that started after the last write is someone
+    # else and the log is closed. The mtime is used rather than the time in
+    # the log name, which is local time without a zone. When the start time
+    # cannot be read, the log is kept.
+    def self.session_alive?(pid, written_at, alive: method(:process_alive?),
+                            started_at: method(:process_started_at))
+      return false unless alive.call(pid)
+
+      started = started_at.call(pid)
+      started.nil? || started <= written_at + START_SLACK
+    end
+
+    # `ps -o lstart` prints the same fixed format on macOS and Linux in the C
+    # locale, e.g. "Wed Nov  4 22:33:04 2026". Nil when it cannot be read.
+    def self.process_started_at(pid)
+      out = IO.popen({ "LC_ALL" => "C" }, ["ps", "-o", "lstart=", "-p", pid.to_s],
+                     err: File::NULL, &:read)
+      Time.strptime(out.split.join(" "), "%a %b %d %H:%M:%S %Y")
+    rescue SystemCallError, ArgumentError
+      nil
     end
 
     # Deletes logs of finished sessions: with max_age, those last written more
     # than max_age seconds ago; then the oldest, until the total size of all
     # session logs is at most max_bytes. Logs of live sessions are kept.
     def self.rotate!(dir, max_bytes: DEFAULT_MAX_BYTES, max_age: nil, now: Time.now,
-                     alive: method(:process_alive?))
+                     alive: method(:session_alive?))
       logs = list(dir)
       if max_age
         logs = logs.reject do |log|
-          next false if log[:mtime] >= now - max_age || alive.call(log[:pid])
+          next false if log[:mtime] >= now - max_age || alive.call(log[:pid], log[:mtime])
 
           remove_log(File.join(dir, log[:name]))
           true
@@ -42,7 +73,7 @@ module Oops
       total = logs.sum { |l| l[:size] }
       logs.sort_by { |l| l[:name] }.each do |log|
         break if total <= max_bytes
-        next if alive.call(log[:pid])
+        next if alive.call(log[:pid], log[:mtime])
 
         remove_log(File.join(dir, log[:name]))
         total -= log[:size]
@@ -52,8 +83,8 @@ module Oops
     end
 
     # Deletes the logs of all finished sessions. Returns how many it deleted.
-    def self.clear!(dir, alive: method(:process_alive?))
-      dead = list(dir).reject { |log| alive.call(log[:pid]) }
+    def self.clear!(dir, alive: method(:session_alive?))
+      dead = list(dir).reject { |log| alive.call(log[:pid], log[:mtime]) }
       dead.each { |log| remove_log(File.join(dir, log[:name])) }
       dead.size
     rescue Errno::ENOENT
@@ -83,20 +114,28 @@ module Oops
     end
     private_class_method :list, :remove_log
 
-    def initialize(path, max_bytes: DEFAULT_MAX_BYTES)
+    # With max_age (seconds), records that ended longer ago than that are
+    # dropped from the log as new ones are appended.
+    def initialize(path, max_bytes: DEFAULT_MAX_BYTES, max_age: nil)
       @path = path
       @max_bytes = max_bytes
+      @max_age = max_age
+      @next_age_check = nil
     end
 
-    # Raises if the record cannot be written. Trimming an oversized log is
-    # best effort and never raises.
-    def append(record)
+    # Raises if the record cannot be written. Trimming the log, by size or by
+    # age, is best effort and never raises.
+    def append(record, now: Time.now)
       line = record.to_json_line
       size = File.open(@path, File::APPEND | File::CREAT | File::WRONLY, 0o600) do |f|
         f.syswrite(line)
         f.size
       end
-      trim if size > @max_bytes
+      if size > @max_bytes
+        trim
+      elsif age_check_due?(now)
+        expire((now - @max_age).to_i)
+      end
     end
 
     # Yields records newest first. Unparsable lines are skipped. The block can
@@ -161,11 +200,52 @@ module Oops
     end
 
     # Rewrites the log with the newest complete records that fit in TRIM_TO
-    # of the cap (always at least the newest one). The new file is written
-    # next to the log and renamed over it, so a reader sees either the old or
-    # the new log, never a mix.
+    # of the cap (always at least the newest one).
     def trim
-      keep = newest_lines((@max_bytes * TRIM_TO).to_i)
+      rewrite(newest_lines((@max_bytes * TRIM_TO).to_i))
+    end
+
+    def age_check_due?(now)
+      return false unless @max_age
+      return false if @next_age_check && now < @next_age_check
+
+      @next_age_check = now + AGE_CHECK_INTERVAL
+      true
+    end
+
+    # Records are appended in the order they end, so the first line is the
+    # oldest; the log is rewritten only when that one is too old or unreadable.
+    def expire(cutoff)
+      first = File.open(@path, "rb", &:gets)
+      return if first.nil?
+
+      record = parse(first.chomp)
+      return if record && record.ended_at.to_i >= cutoff
+
+      rewrite(lines_ended_since(cutoff))
+    rescue StandardError
+      nil
+    end
+
+    # Newest lines first, back to the first record that ended before cutoff.
+    def lines_ended_since(cutoff)
+      lines = []
+      File.open(@path, "rb") do |io|
+        each_line_backward(io) do |line|
+          record = parse(line)
+          next unless record
+          break if record.ended_at.to_i < cutoff
+
+          lines << line
+        end
+      end
+      lines
+    end
+
+    # Replaces the log with keep (newest first). The new file is written next
+    # to the log and renamed over it, so a reader sees either the old or the
+    # new log, never a mix.
+    def rewrite(keep)
       tmp = "#{@path}.trim"
       remove_file(tmp)
       File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |f|
