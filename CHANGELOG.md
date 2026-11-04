@@ -6,6 +6,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 - Fixed: a closed tab's log is no longer kept forever when its process id is reused by another process. A process that started after the log was last written is not the tab that wrote it ([#58](https://github.com/ysb3996-blip/oops/issues/58)).
 - Changed: a tab that stays open now drops commands older than `retention_days` from its own log when a command finishes, at most once an hour ([#59](https://github.com/ysb3996-blip/oops/issues/59)).
+- bash in Ghostty: when Ghostty injected its shell integration into the outer shell, the recorded shell now loads it again, as zsh and fish already did. The line the README asked bash users to add is no longer needed there ([#50](https://github.com/ysb3996-blip/oops/issues/50)).
 
 ## 0.4.0 - 2026-11-03
 
