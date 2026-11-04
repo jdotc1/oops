@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Changed: the line that stands in for a full-screen app's output names the command when the line holds one command, e.g. `[git: full-screen output omitted]` for `git log` through a pager ([#45](https://github.com/ysb3996-blip/oops/issues/45)).
+
 ## 0.4.0 - 2026-11-03
 
 - `--print` / `-p`: write the formatted text to stdout instead of the clipboard, so SSH sessions, containers and scripts can pipe it ([#40](https://github.com/ysb3996-blip/oops/issues/40)). Contributed by [@ShahadatTest](https://github.com/ShahadatTest) in [#52](https://github.com/ysb3996-blip/oops/pull/52).

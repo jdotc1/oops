@@ -2,6 +2,10 @@
 
 [English](CHANGELOG.md) | 日本語
 
+## 未リリース
+
+- 変更: 全画面アプリの出力の代わりに入る 1 行に、コマンド名を入れるようにしました。1 行に 1 コマンドのときだけで、たとえばページャーを通した `git log` なら `[git: full-screen output omitted]` です（[#45](https://github.com/ysb3996-blip/oops/issues/45)）。
+
 ## 0.4.0 - 2026-11-03
 
 - `--print` / `-p` を追加。クリップボードの代わりに整形したテキストを標準出力へ書き出し、SSH 先・コンテナ・スクリプトからパイプできるようにします（[#40](https://github.com/ysb3996-blip/oops/issues/40)）。[@ShahadatTest](https://github.com/ShahadatTest) さんによる貢献（[#52](https://github.com/ysb3996-blip/oops/pull/52)）。
