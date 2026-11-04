@@ -68,6 +68,16 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
     if __oops_runs_script; then
       : # not a prompt to record; run the script as asked
     elif command -v "$__oops_bin" >/dev/null 2>&1; then
+      # Ghostty injects its bash integration by starting bash in POSIX mode
+      # with ENV pointing at it; that file sources the rc files (this one)
+      # with __ghostty_bash_flags set, and loads the integration afterwards.
+      # The restarted shell is not injected, so note whether this one is;
+      # the restarted shell loads the integration again (see the end).
+      if [ -n "${__ghostty_bash_flags+x}" ]; then
+        export __OOPS_GHOSTTY=1
+      else
+        unset __OOPS_GHOSTTY
+      fi
       # execfail: if the exec fails anyway, keep this shell running.
       __oops_execfail=$(shopt -p execfail || :)
       shopt -s execfail
@@ -330,6 +340,16 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${OOPS_DISABLE:-}" ] &&
         *__oops_precmd* | *__oops_install*) ;;
         *) PROMPT_COMMAND="${PROMPT_COMMAND:-}"$'\n'"$__oops_e_install" ;;
       esac
+    fi
+
+    # The shell this one replaced was injected with Ghostty's integration
+    # (see above); load it here, after our hooks, as Ghostty documents for a
+    # manual setup. Once per shell process.
+    if [ -n "${__OOPS_GHOSTTY:-}" ] && [ -z "${__oops_ghostty_loaded:-}" ] &&
+      [ -n "${GHOSTTY_RESOURCES_DIR:-}" ] &&
+      [ -r "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash" ]; then
+      __oops_ghostty_loaded=1
+      builtin source "$GHOSTTY_RESOURCES_DIR/shell-integration/bash/ghostty.bash"
     fi
   fi
   unset -f __oops_runs_script
