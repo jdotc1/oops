@@ -10,8 +10,8 @@ module Oops
     # tab is not rewritten on every command.
     TRIM_TO = 0.75
     LOG_NAME = /\A(\d{8}-\d{6})-(\d+)\.jsonl\z/
-    # The recorder starts just before it names its log, and `ps` and the log
-    # name both round to the second, so a process may look slightly newer.
+    # `ps` rounds a start time down to the second and file systems may round
+    # mtimes; the slack keeps such rounding from closing a live tab.
     START_SLACK = 5
     # How often an open tab checks its log for records older than max_age.
     AGE_CHECK_INTERVAL = 3600
@@ -28,20 +28,22 @@ module Oops
       true
     rescue Errno::EPERM
       true
-    rescue SystemCallError
+    rescue SystemCallError, RangeError
       false
     end
 
-    # Whether the tab that named its log at opened_at is still open. Process
-    # ids are reused, so a live process that started after the log was named
-    # is someone else, and the log is closed. When the start time cannot be
-    # read, the log is kept.
-    def self.session_alive?(pid, opened_at, alive: method(:process_alive?),
+    # Whether the tab whose log was last written at written_at is still open.
+    # Process ids are reused, and the recorder starts before it ever writes its
+    # log, so a live process that started after the last write is someone
+    # else and the log is closed. The mtime is used rather than the time in
+    # the log name, which is local time without a zone. When the start time
+    # cannot be read, the log is kept.
+    def self.session_alive?(pid, written_at, alive: method(:process_alive?),
                             started_at: method(:process_started_at))
       return false unless alive.call(pid)
 
       started = started_at.call(pid)
-      started.nil? || started <= opened_at + START_SLACK
+      started.nil? || started <= written_at + START_SLACK
     end
 
     # `ps -o lstart` prints the same fixed format on macOS and Linux in the C
@@ -62,7 +64,7 @@ module Oops
       logs = list(dir)
       if max_age
         logs = logs.reject do |log|
-          next false if log[:mtime] >= now - max_age || alive.call(log[:pid], log[:opened_at])
+          next false if log[:mtime] >= now - max_age || alive.call(log[:pid], log[:mtime])
 
           remove_log(File.join(dir, log[:name]))
           true
@@ -71,7 +73,7 @@ module Oops
       total = logs.sum { |l| l[:size] }
       logs.sort_by { |l| l[:name] }.each do |log|
         break if total <= max_bytes
-        next if alive.call(log[:pid], log[:opened_at])
+        next if alive.call(log[:pid], log[:mtime])
 
         remove_log(File.join(dir, log[:name]))
         total -= log[:size]
@@ -82,7 +84,7 @@ module Oops
 
     # Deletes the logs of all finished sessions. Returns how many it deleted.
     def self.clear!(dir, alive: method(:session_alive?))
-      dead = list(dir).reject { |log| alive.call(log[:pid], log[:opened_at]) }
+      dead = list(dir).reject { |log| alive.call(log[:pid], log[:mtime]) }
       dead.each { |log| remove_log(File.join(dir, log[:name])) }
       dead.size
     rescue Errno::ENOENT
@@ -99,8 +101,7 @@ module Oops
         rescue SystemCallError
           next
         end
-        { name: name, pid: m[2].to_i, opened_at: Time.strptime(m[1], "%Y%m%d-%H%M%S"),
-          size: stat.size, mtime: stat.mtime }
+        { name: name, pid: m[2].to_i, size: stat.size, mtime: stat.mtime }
       end
     end
 
@@ -213,11 +214,13 @@ module Oops
     end
 
     # Records are appended in the order they end, so the first line is the
-    # oldest; the log is rewritten only when that one is too old.
+    # oldest; the log is rewritten only when that one is too old or unreadable.
     def expire(cutoff)
       first = File.open(@path, "rb", &:gets)
-      record = first && parse(first.chomp)
-      return unless record && record.ended_at.to_i < cutoff
+      return if first.nil?
+
+      record = parse(first.chomp)
+      return if record && record.ended_at.to_i >= cutoff
 
       rewrite(lines_ended_since(cutoff))
     rescue StandardError

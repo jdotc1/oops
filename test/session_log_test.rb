@@ -299,22 +299,36 @@ class SessionLogTest < Minitest::Test
     end
   end
 
-  def test_rotate_and_clear_pass_the_time_the_log_was_named
+  def test_rotate_and_clear_pass_the_time_the_log_was_last_written
     Dir.mktmpdir do |d|
       File.write("#{d}/20260102-030405-7.jsonl", "x")
+      written = Time.at(1_800_000_000)
+      File.utime(written, written, "#{d}/20260102-030405-7.jsonl")
       seen = []
-      alive = lambda do |pid, opened_at|
-        seen << [pid, opened_at]
+      alive = lambda do |pid, written_at|
+        seen << [pid, written_at]
         true
       end
       Oops::SessionLog.rotate!(d, max_bytes: 0, alive: alive)
       Oops::SessionLog.clear!(d, alive: alive)
-      assert_equal [[7, Time.new(2026, 1, 2, 3, 4, 5)]] * 2, seen
+      assert_equal [[7, written]] * 2, seen
+    end
+  end
+
+  def test_odd_log_names_do_not_break_rotate_or_clear
+    Dir.mktmpdir do |d|
+      gone = Process.spawn("true")
+      Process.wait(gone)
+      ["20261399-999999-#{gone}", "20260101-000000-99999999999999999999"].each do |name|
+        File.write("#{d}/#{name}.jsonl", "x")
+      end
+      Oops::SessionLog.rotate!(d, max_bytes: 0)
+      assert_equal [], Dir.children(d)
     end
   end
 
   def test_session_alive_needs_a_live_process_that_started_before_the_log
-    opened = Time.new(2026, 1, 2, 3, 4, 5)
+    opened = Time.at(1_800_000_000)
     check = lambda do |live, started|
       Oops::SessionLog.session_alive?(42, opened, alive: ->(_) { live }, started_at: ->(_) { started })
     end
@@ -357,6 +371,16 @@ class SessionLogTest < Minitest::Test
       assert_equal [1, 2], log.last(5).map(&:seq)
       log.append(rec(3, ended: t0.to_i + 3600), now: t0 + 3600)
       assert_equal [3], log.last(5).map(&:seq)
+    end
+  end
+
+  def test_append_expires_a_log_whose_first_line_is_unreadable
+    Dir.mktmpdir do |d|
+      now = Time.at(1_800_000_000)
+      log = Oops::SessionLog.new("#{d}/s.jsonl", max_age: 86_400)
+      File.write(log.path, "not json\n#{rec(1, ended: now.to_i - (3 * 86_400)).to_json_line}")
+      log.append(rec(2, ended: now.to_i), now: now)
+      assert_equal [2], log.last(5).map(&:seq)
     end
   end
 
