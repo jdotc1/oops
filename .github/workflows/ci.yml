@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# A new push to a pull request cancels its older run; runs on main are kept.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: ${{ matrix.os }} / Ruby ${{ matrix.ruby }}
@@ -19,6 +24,11 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         # Ruby 3.5 was released as 4.0 ("3.5" only matches 3.5.0-preview1).
         ruby: ["3.3", "3.4", "4.0"]
+        # macOS runners are scarce and often queue for long; the oldest and
+        # newest Ruby there are enough, the middle one runs on Linux only.
+        exclude:
+          - os: macos-latest
+            ruby: "3.4"
     steps:
       - uses: actions/checkout@v7
       - name: Install zsh and fish
