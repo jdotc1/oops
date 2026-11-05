@@ -200,6 +200,8 @@ $ bundle exec rspec
 
 ## AI コーディングエージェントと使う
 
+![デモ: ruby test_user.rb が失敗する。Claude Code で「why did the test fail?」と聞くと、Claude が oops:err を読み込み、user.rb を開いて原因と直し方を答える](docs/demo-claude.gif)
+
 Claude Code のようにターミナルで動くコーディングエージェントは、起動したタブの環境変数を引き継いでシェルコマンドを実行します。そのため記録中のタブで起動すると、エージェント自身が `oops -p` を実行して、起動する前にそのタブで実行したコマンドと出力を、クリップボードと同じようにマスクした状態で読めます。貼り付けは要らず、エージェントがコマンドを実行し直す必要もありません。
 
 ```console
