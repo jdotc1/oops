@@ -61,6 +61,14 @@ source ~/.oops/oops.plugin.zsh
 - `PATH` の Ruby が古いと、`oops: ... init zsh failed (oops needs Ruby 3.3 or later); recording disabled` と出て、記録なしで普通に起動します。
 - プラグインマネージャーは `main` ブランチから更新するので、最新のリリースより先の内容になることがあります。
 
+### Claude Code で使う場合
+
+Claude Code を使っているなら、Claude Code の中で oops プラグインも入れてください。タブで最後に失敗したコマンドを、貼り付けなしで Claude が読めるようになります（[Claude Code のプラグイン](#claude-code-のプラグイン)を参照）。
+
+```
+/plugin install oops --marketplace ysb3996-blip/oops
+```
+
 ## シェルの設定
 
 rc ファイルに 1 行足します（zsh は `~/.zshrc`、bash は `~/.bashrc`。macOS で bash の設定を `~/.bash_profile` に置いているなら、そちらに書きます）。
