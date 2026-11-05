@@ -200,6 +200,8 @@ $ bundle exec rspec
 
 ## With AI coding agents
 
+![Demo: ruby test_user.rb fails; in Claude Code, asking "why did the test fail?" makes Claude load oops:err, read user.rb and name the cause and the fix](docs/demo-claude.gif)
+
 A coding agent that runs in your terminal, such as Claude Code, starts its shell commands with the environment of the tab you started it in. In a recorded tab it can therefore run `oops -p` itself and read the commands you ran there before starting it, with their output, masked as on the clipboard. You do not paste anything, and the agent does not run the command again.
 
 ```console
