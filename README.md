@@ -15,6 +15,8 @@ You ran a command and it failed. You want to show it to a chat assistant, a team
 
 What lands on your clipboard is a code block with the command, its output, and the exit code. Colors are stripped, and tokens, keys and email addresses are masked.
 
+A coding agent such as Claude Code, started in the same tab, can read it too, without the clipboard: see [With AI coding agents](#with-ai-coding-agents).
+
 ## Install
 
 ```sh
@@ -187,6 +189,43 @@ $ bundle exec rspec
 ### `oops status`
 
 `oops status` prints `recording`, `paused` or `off` (this shell is not recorded, or its log was deleted) and exits `0` only when recording. It prints no error, so a prompt or script can call it, for example with a [starship custom module](https://starship.rs/config/#custom-commands). Each call starts Ruby, which takes roughly 0.1 to 0.2 seconds; `oops doctor` tells more when the answer is `off`.
+
+## With AI coding agents
+
+A coding agent that runs in your terminal, such as Claude Code, starts its shell commands with the environment of the tab you started it in. In a recorded tab it can therefore run `oops -p` itself and read the commands you ran there before starting it, with their output, masked as on the clipboard. You do not paste anything, and the agent does not run the command again.
+
+```console
+$ bundle exec rake test      # fails
+$ claude
+> Run `oops -p err` and fix the failing test.
+```
+
+In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands. Other terminal agents work the same way when they pass your environment to their shell commands.
+
+To make it one word in Claude Code, save this as `~/.claude/commands/oops.md` and type `/oops`, optionally followed by a request (`/oops fix it`):
+
+```markdown
+---
+description: Read the last failed command in this terminal tab (recorded by oops)
+allowed-tools: Bash(oops:*)
+---
+The last command that failed in this terminal tab, recorded by oops (secrets masked):
+
+!`oops -p err`
+
+$ARGUMENTS
+```
+
+When nothing has failed yet, or the tab is not recorded, Claude Code shows oops's message instead.
+
+This helps most when running the command again is a bad idea:
+
+- It is slow (a full test suite, a Docker build) or fails only sometimes.
+- It changes things (`terraform apply`, a migration, a deploy).
+- It needs access you do not give the agent (production `kubectl`, an MFA session, `sudo`).
+- Its output holds tokens or keys: they are masked before the agent sees them (masking is pattern based, see [Configuration](#configuration) for what it covers).
+
+The agent reads only the tab it was started in, and only what finished before it started. To show it something new in Claude Code, quit, run the command, and come back with `claude --continue`.
 
 ## Configuration
 
