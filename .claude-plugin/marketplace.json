@@ -1,0 +1,13 @@
+{
+  "name": "oops",
+  "owner": {
+    "name": "ysb3996-blip"
+  },
+  "plugins": [
+    {
+      "name": "oops",
+      "source": "./claude-plugin",
+      "description": "Let Claude Code read the last command that failed in your terminal tab, recorded by the oops CLI, with secrets masked"
+    }
+  ]
+}

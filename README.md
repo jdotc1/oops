@@ -202,7 +202,26 @@ $ claude
 
 In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands. Other terminal agents work the same way when they pass your environment to their shell commands.
 
-To make it one word in Claude Code, save this as `~/.claude/commands/oops.md` and type `/oops`, optionally followed by a request (`/oops fix it`):
+This helps most when running the command again is a bad idea:
+
+- It is slow (a full test suite, a Docker build) or fails only sometimes.
+- It changes things (`terraform apply`, a migration, a deploy).
+- It needs access you do not give the agent (production `kubectl`, an MFA session, `sudo`).
+- Its output holds tokens or keys: they are masked before the agent sees them (masking is pattern based, see [Configuration](#configuration) for what it covers).
+
+The agent reads only the tab it was started in, and only what finished before it started. To show it something new in Claude Code, quit, run the command, and come back with `claude --continue`.
+
+### Claude Code plugin
+
+The oops plugin for Claude Code adds `/oops:err`, which puts the last failed command of the tab into the conversation, optionally followed by a request (`/oops:err fix it`). You rarely need to type it: when you ask about a command that just failed ("why did that fail?"), Claude Code uses it on its own. Install it inside Claude Code:
+
+```
+/plugin install oops --marketplace ysb3996-blip/oops
+```
+
+On Claude Code before 2.1.275, run `/plugin marketplace add ysb3996-blip/oops` and then `/plugin install oops@oops`. The plugin needs the `oops` command itself (see [Install](#install)).
+
+Without the plugin, save this as `~/.claude/commands/oops.md` and type `/oops` instead; Claude Code uses it on its own in the same way:
 
 ```markdown
 ---
@@ -217,15 +236,6 @@ $ARGUMENTS
 ```
 
 When nothing has failed yet, or the tab is not recorded, Claude Code shows oops's message instead.
-
-This helps most when running the command again is a bad idea:
-
-- It is slow (a full test suite, a Docker build) or fails only sometimes.
-- It changes things (`terraform apply`, a migration, a deploy).
-- It needs access you do not give the agent (production `kubectl`, an MFA session, `sudo`).
-- Its output holds tokens or keys: they are masked before the agent sees them (masking is pattern based, see [Configuration](#configuration) for what it covers).
-
-The agent reads only the tab it was started in, and only what finished before it started. To show it something new in Claude Code, quit, run the command, and come back with `claude --continue`.
 
 ## Configuration
 
