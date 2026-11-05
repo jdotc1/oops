@@ -4,9 +4,11 @@
 
 [![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![codecov](https://codecov.io/gh/ysb3996-blip/oops/graph/badge.svg)](https://codecov.io/gh/ysb3996-blip/oops) [![All Contributors](https://img.shields.io/github/all-contributors/ysb3996-blip/oops?color=ee8449)](#貢献してくれた人たち)
 
-直前のシェルコマンドとその出力を、貼り付けられる形でクリップボードにコピーします。
+直前のシェルコマンドとその出力を、貼り付けられる形でクリップボードにコピーします。Claude Code に「なんで失敗したの？」と聞けば、同じ記録を Claude が自分で読みます。
 
 ![デモ: テストが失敗し、oops がコマンドと出力をコピーし、コメント行と pbpaste でクリップボードの中身(コードブロック)を見せる。続いて cat .env、oops で API キーが [secret] になる](docs/demo.gif)
+
+> **Claude Code を使っているなら:** `/plugin install oops --marketplace ysb3996-blip/oops` でプラグインを入れて、「なんで失敗したの？」と聞くだけです。失敗したコマンドと出力を、秘密をマスクした状態で Claude が自分で読むので、貼り付けも、Claude にコマンドを実行し直させることも要りません。[AI コーディングエージェントと使う](#ai-コーディングエージェントと使う)を参照してください。
 
 コマンドを実行して失敗した。その結果をチャットのアシスタントや Slack の同僚、GitHub の issue に見せたい。普通は、出力をドラッグで選択してコピーし、貼り付けて、コードフェンスを自分で付ける、という手間がかかります。oops なら 2 ステップです。
 
@@ -14,8 +16,6 @@
 2. Cmd-V で貼り付ける。
 
 クリップボードに入るのは、コマンド・出力・終了コードをまとめたコードブロックです。色は取り除かれ、トークン・鍵・メールアドレスはマスクされます。
-
-同じタブで起動した Claude Code などのコーディングエージェントも、クリップボードを使わずにこれを読めます。[AI コーディングエージェントと使う](#ai-コーディングエージェントと使う)を参照してください。
 
 ## インストール
 
