@@ -61,6 +61,14 @@ source ~/.oops/oops.plugin.zsh
 - If the Ruby on `PATH` is too old, the shell prints `oops: ... init zsh failed (oops needs Ruby 3.3 or later); recording disabled` and starts as usual, without recording.
 - Plugin managers update from the `main` branch, which can be ahead of the latest release.
 
+### For Claude Code
+
+If you use Claude Code, also install the oops plugin inside it, so Claude can read the last command that failed in your tab without you pasting it (see [Claude Code plugin](#claude-code-plugin)):
+
+```
+/plugin install oops --marketplace ysb3996-blip/oops
+```
+
 ## Set up your shell
 
 Add one line to your rc file (`~/.zshrc` for zsh, `~/.bashrc` for bash; if you keep your bash setup in `~/.bash_profile` on macOS, put it there):
