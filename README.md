@@ -202,6 +202,22 @@ $ claude
 
 In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands. Other terminal agents work the same way when they pass your environment to their shell commands.
 
+To make it one word in Claude Code, save this as `~/.claude/commands/oops.md` and type `/oops`, optionally followed by a request (`/oops fix it`):
+
+```markdown
+---
+description: Read the last failed command in this terminal tab (recorded by oops)
+allowed-tools: Bash(oops:*)
+---
+The last command that failed in this terminal tab, recorded by oops (secrets masked):
+
+!`oops -p err`
+
+$ARGUMENTS
+```
+
+When nothing has failed yet, or the tab is not recorded, Claude Code shows oops's message instead.
+
 This helps most when running the command again is a bad idea:
 
 - It is slow (a full test suite, a Docker build) or fails only sometimes.

@@ -202,6 +202,22 @@ $ claude
 
 Claude Code では `! oops -p err` と打って、自分で出力を会話に入れることもできます。直近 3 つのコマンドなら `-n 3` を付けます。ほかのターミナルのエージェントも、シェルコマンドに環境変数を引き継ぐものなら同じように使えます。
 
+Claude Code で一言にしたいときは、次の内容を `~/.claude/commands/oops.md` に保存して `/oops` と打ちます。後ろに頼みごとを続けられます（`/oops 直して`）。
+
+```markdown
+---
+description: Read the last failed command in this terminal tab (recorded by oops)
+allowed-tools: Bash(oops:*)
+---
+The last command that failed in this terminal tab, recorded by oops (secrets masked):
+
+!`oops -p err`
+
+$ARGUMENTS
+```
+
+まだ何も失敗していないときや、タブが記録されていないときは、代わりに oops のメッセージが表示されます。
+
 特に役立つのは、コマンドを実行し直したくないときです。
 
 - 時間がかかる（テスト全体、Docker のビルド）、またはたまにしか失敗しない。
