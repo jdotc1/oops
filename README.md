@@ -4,9 +4,11 @@ English | [日本語](README.ja.md)
 
 [![Gem Version](https://img.shields.io/gem/v/oops-cli)](https://rubygems.org/gems/oops-cli) [![CI](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml/badge.svg)](https://github.com/ysb3996-blip/oops/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![codecov](https://codecov.io/gh/ysb3996-blip/oops/graph/badge.svg)](https://codecov.io/gh/ysb3996-blip/oops) [![All Contributors](https://img.shields.io/github/all-contributors/ysb3996-blip/oops?color=ee8449)](#contributors)
 
-Copy the last shell command and its output to the clipboard, ready to paste.
+Copy the last shell command and its output to the clipboard, ready to paste. Or ask Claude Code why it failed: it reads the same record itself.
 
 ![Demo: a test fails, oops copies the command and its output, a comment line and pbpaste show what is on the clipboard; then cat .env, oops, and the API key is shown as [secret]](docs/demo.gif)
+
+> **Using Claude Code?** Install the plugin with `/plugin install oops --marketplace ysb3996-blip/oops`, then ask "why did that fail?". Claude reads the failed command and its output itself, with secrets masked, so you neither paste it nor have Claude run it again. See [With AI coding agents](#with-ai-coding-agents).
 
 You ran a command and it failed. You want to show it to a chat assistant, a teammate on Slack, or a GitHub issue. Normally that means dragging to select the output, copying, pasting, and adding the code fences yourself. With oops it is two steps:
 
@@ -14,8 +16,6 @@ You ran a command and it failed. You want to show it to a chat assistant, a team
 2. Paste with Cmd-V.
 
 What lands on your clipboard is a code block with the command, its output, and the exit code. Colors are stripped, and tokens, keys and email addresses are masked.
-
-A coding agent such as Claude Code, started in the same tab, can read it too, without the clipboard: see [With AI coding agents](#with-ai-coding-agents).
 
 ## Install
 

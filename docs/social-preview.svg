@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <title>oops: copy the last shell command and its output as a paste-ready block</title>
+  <title>oops: copy the last shell command and its output as a paste-ready block, or let Claude Code read it</title>
   <rect width="1280" height="640" fill="#FBF8F3"/>
 
   <!-- left: name and tagline -->
-  <g transform="translate(88 150)">
+  <g transform="translate(88 104)">
     <rect x="0" y="0" width="84" height="84" rx="20" fill="#E5533D"/>
     <circle cx="42" cy="42" r="15" fill="#fff"/>
     <text x="112" y="72" font-size="92" font-weight="800" fill="#2B2B2B" letter-spacing="-2">oops</text>
@@ -11,10 +11,16 @@
     <text x="0" y="176" font-size="36" font-weight="700" fill="#2B2B2B">Copy the last shell command</text>
     <text x="0" y="224" font-size="36" font-weight="700" fill="#2B2B2B">and its output. Paste anywhere.</text>
 
-    <text x="0" y="292" font-size="24" fill="#6B6B6B">Secrets masked. zsh and bash. macOS and Linux.</text>
+    <text x="0" y="284" font-size="24" fill="#6B6B6B">Secrets masked. zsh, bash and fish. macOS and Linux.</text>
 
-    <rect x="0" y="330" width="372" height="60" rx="12" fill="#fff" stroke="#EDE6DC" stroke-width="2"/>
-    <text x="24" y="369" font-family="Menlo, Consolas, monospace" font-size="24" fill="#2B2B2B">$ gem install oops-cli</text>
+    <rect x="0" y="316" width="372" height="60" rx="12" fill="#fff" stroke="#EDE6DC" stroke-width="2"/>
+    <text x="24" y="355" font-family="Menlo, Consolas, monospace" font-size="24" fill="#2B2B2B">$ gem install oops-cli</text>
+
+    <!-- Claude Code -->
+    <rect x="0" y="400" width="540" height="64" rx="32" fill="#FDECE8"/>
+    <circle cx="34" cy="432" r="9" fill="#E5533D"/>
+    <text x="58" y="441" font-size="26" font-weight="700" fill="#C8432F">Claude Code reads it too</text>
+    <text x="370" y="441" font-family="Menlo, Consolas, monospace" font-size="24" fill="#C8432F">/oops:err</text>
   </g>
 
   <!-- right: terminal -->
@@ -48,5 +54,5 @@
     <text x="329" y="101" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#C8432F">[secret]</text>
   </g>
 
-  <text x="88" y="588" font-size="22" fill="#9A9A9A">github.com/ysb3996-blip/oops</text>
+  <text x="88" y="604" font-size="22" fill="#9A9A9A">github.com/ysb3996-blip/oops</text>
 </svg>
