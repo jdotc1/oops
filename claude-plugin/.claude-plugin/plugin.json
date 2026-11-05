@@ -1,0 +1,10 @@
+{
+  "name": "oops",
+  "description": "Let Claude Code read the last command that failed in your terminal tab, recorded by the oops CLI, with secrets masked",
+  "author": {
+    "name": "ysb3996-blip"
+  },
+  "homepage": "https://github.com/ysb3996-blip/oops",
+  "repository": "https://github.com/ysb3996-blip/oops",
+  "license": "MIT"
+}

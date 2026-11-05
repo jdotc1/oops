@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Added: a Claude Code plugin in this repository. `/plugin install oops --marketplace ysb3996-blip/oops` adds `/oops:err`, which puts the tab's last failed command into the conversation; Claude Code also uses it when you ask about a command that just failed. See "With AI coding agents" in the README.
+
 ## 0.4.1 - 2026-11-04
 
 - Fixed: a closed tab's log is no longer kept forever when its process id is reused by another process. A process that started after the log was last written is not the tab that wrote it ([#58](https://github.com/ysb3996-blip/oops/issues/58)).
