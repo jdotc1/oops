@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- Added: `--gist` uploads the formatted text as a secret gist through the GitHub CLI (`gh gist create`) and copies the gist's URL. Secrets are always masked; `--show-secrets`, `--print` and `--json` are a usage error with it ([#44](https://github.com/ysb3996-blip/oops/issues/44)).
 - Docs: the README shows how to use oops from Codex CLI, with an `AGENTS.md` snippet so Codex reads the failed command without being told.
 
 ## 0.5.0 - 2026-11-07

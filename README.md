@@ -124,13 +124,14 @@ Options for `oops`, `oops N` and `oops err`:
 | `--output-only` | Leave out the `$ command` line and copy only the output |
 | `-p`, `--print` | Write the text to stdout instead of the clipboard (no `copied:` line) |
 | `--json` | Write the commands as JSON to stdout, for scripts and agents |
+| `--gist` | Upload the text as a secret gist with the [GitHub CLI](https://cli.github.com) and copy its URL ([below](#--gist)) |
 | `--show-secrets` | Do not mask secrets and do not apply the replace table |
 
 `N` must be a positive integer. Specify the command count once, either as a positional `N` or with `-n N`; combining them or repeating `-n` is a usage error. If fewer matching commands are available, oops copies those it finds. `-n` can be combined with the formatting options above.
 
 `oops` never copies itself: if the previous command was `oops`, you get the command before it.
 
-Exit codes: `0` copied (or printed with `--print` or `--json`), `1` nothing copied (not recording, no command yet, no failed command, paused, or the clipboard command failed), `2` usage error.
+Exit codes: `0` copied (or printed with `--print` or `--json`, or uploaded with `--gist`), `1` nothing copied (not recording, no command yet, no failed command, paused, the clipboard command failed, or `gh` failed with `--gist`), `2` usage error.
 
 ### Default output
 
@@ -205,6 +206,19 @@ $ bundle exec rspec
   }
 ]
 ```
+
+### `--gist`
+
+A long output is awkward to paste into a chat or an issue. `oops --gist` uploads the formatted text as a secret gist and copies the gist's URL instead, then prints it:
+
+```console
+$ oops err --gist
+gist: https://gist.github.com/you/4f1e8c0b2d9a7e6f5c3b1a0d9e8f7c6b (1 lines)
+```
+
+oops does not talk to GitHub itself: it runs `gh gist create` from the [GitHub CLI](https://cli.github.com), so you need `gh` installed and logged in once with `gh auth login`. The gist holds one file, `oops.md`, and its description is the first command line. It works with `N`, `err`, `-n`, `--github`, `--time` and `--output-only`.
+
+A secret gist is not listed or searchable, but anyone who has the URL can open it, so secrets are always masked: `--show-secrets` is a usage error with `--gist`, and so are `--print` and `--json`. Delete a gist you no longer need on gist.github.com or with `gh gist delete`. If no clipboard tool is found, the URL is still printed and oops warns that it was not copied.
 
 ### `oops status`
 

@@ -30,6 +30,7 @@ class CLITest < Minitest::Test
     assert_includes out.string, "--output-only"
     assert_includes out.string, "-p, --print"
     assert_includes out.string, "--json"
+    assert_includes out.string, "--gist"
   end
 
   def test_init_prints_snippet_with_absolute_bin
@@ -399,6 +400,89 @@ class CLICopyTest < Minitest::Test
     %w[--github --time --output-only].each do |option|
       assert_equal [2, "", "oops: --json cannot be combined with #{option}\n"], run_cli("--json", option)
       assert_equal [2, "", "oops: --json cannot be combined with #{option}\n"], run_cli(option, "err", "--json")
+    end
+  end
+
+  # A stand-in for the GitHub CLI: it saves its arguments and stdin next to
+  # itself and prints what a real `gh gist create` prints on stdout.
+  def fake_gh(script = 'cat > "$dir/stdin"; echo "https://gist.github.com/someone/abc123"')
+    bin = File.join(@dir, "bin")
+    FileUtils.mkdir_p(bin)
+    path = File.join(bin, "gh")
+    File.write(path, <<~SH)
+      #!/bin/sh
+      dir=$(dirname "$0")
+      printf '%s\n' "$@" > "$dir/argv"
+      #{script}
+    SH
+    File.chmod(0o755, path)
+    @env.merge("PATH" => "#{bin}:/usr/bin:/bin")
+  end
+
+  def gh_argv = File.read(File.join(@dir, "bin", "argv")).split("\n")
+  def gh_stdin = File.read(File.join(@dir, "bin", "stdin"))
+
+  def test_gist_uploads_the_text_and_copies_the_url
+    add("echo $T", "ghp_#{'a' * 36}\r\nmore\r\n", exit: 1)
+    env = fake_gh
+    assert_equal [0, "gist: https://gist.github.com/someone/abc123 (2 lines, 1 secrets masked)\n", ""],
+                 run_cli("--gist", env: env)
+    assert_equal %w[gist create - --filename oops.md --desc] << "oops: $ echo $T", gh_argv
+    assert_equal "```\n$ echo $T\n[secret]\nmore\n(exit 1)\n```\n", gh_stdin
+    assert_equal "https://gist.github.com/someone/abc123", clip
+  end
+
+  def test_gist_keeps_formatting_options_and_names_the_first_command
+    add("make\nmake test", "boom\r\n", exit: 2)
+    env = fake_gh
+    assert_equal 0, run_cli("--gist", "--github", env: env).first
+    assert_equal "oops: $ make ...", gh_argv.last
+    assert_match(/\A```console\n/, gh_stdin)
+  end
+
+  def test_gist_rejects_show_secrets_print_and_json
+    add("c1", "one\r\n")
+    env = fake_gh
+    { "--show-secrets" => "--show-secrets", "-p" => "--print", "--print" => "--print",
+      "--json" => "--json" }.each do |option, name|
+      assert_equal [2, "", "oops: --gist cannot be combined with #{name}\n"], run_cli("--gist", option, env: env)
+    end
+    refute File.exist?(File.join(@dir, "bin", "argv"))
+  end
+
+  def test_gist_without_gh_explains_how_to_get_it
+    add("c1", "one\r\n")
+    empty = File.join(@dir, "empty")
+    FileUtils.mkdir_p(empty)
+    message = "oops: --gist needs the GitHub CLI (gh). Install it from https://cli.github.com " \
+              "and run  gh auth login  once.\n"
+    assert_equal [1, "", message], run_cli("--gist", env: @env.merge("PATH" => empty))
+    refute File.exist?(@clip)
+  end
+
+  def test_gist_when_gh_is_not_logged_in
+    add("c1", "one\r\n")
+    env = fake_gh('cat > /dev/null; echo "To get started with GitHub CLI, please run:  gh auth login" >&2; exit 4')
+    assert_equal [1, "", "oops: gh is not logged in to GitHub. Run  gh auth login  first.\n"],
+                 run_cli("--gist", env: env)
+    refute File.exist?(@clip)
+  end
+
+  def test_gist_passes_on_other_gh_errors
+    add("c1", "one\r\n")
+    env = fake_gh('cat > /dev/null; echo "- Creating gist oops.md" >&2; echo "HTTP 502: Bad Gateway" >&2; exit 1')
+    assert_equal [1, "", "oops: gh gist create failed: HTTP 502: Bad Gateway\n"], run_cli("--gist", env: env)
+    env = fake_gh("cat > /dev/null; echo created")
+    assert_equal [1, "", "oops: gh gist create printed no URL\n"], run_cli("--gist", env: env)
+  end
+
+  def test_gist_prints_the_url_when_the_clipboard_is_missing
+    add("c1", "one\r\n")
+    env = fake_gh
+    with_detect(->(*, **) {}) do
+      status, out, err = run_cli("--gist", env: env)
+      assert_equal [0, "gist: https://gist.github.com/someone/abc123 (1 lines)\n"], [status, out]
+      assert_match(/\Aoops: warning: the URL was not copied: no clipboard tool found/, err)
     end
   end
 

@@ -26,7 +26,7 @@ module Oops
       end
 
       options = { github: false, show_secrets: false, time: false, output_only: false, print: false,
-                  json: false }
+                  json: false, gist: false }
       count = nil
       parser = OptionParser.new do |o|
         o.banner = "Usage: oops [N | err] [-n N] [options]\n       " \
@@ -42,6 +42,7 @@ module Oops
         o.on("--show-secrets", "Do not mask secrets or apply the replace table") { options[:show_secrets] = true }
         o.on("-p", "--print", "Write the text to stdout instead of the clipboard") { options[:print] = true }
         o.on("--json", "Write the commands as JSON to stdout") { options[:json] = true }
+        o.on("--gist", "Upload as a secret gist (needs gh) and copy its URL") { options[:gist] = true }
         o.on("-v", "--version", "Print version and exit") do
           stdout.puts "oops #{VERSION}"
           return 0
@@ -52,7 +53,7 @@ module Oops
         end
       end
       copy_target = target(parser.parse(argv), count: count)
-      check_json(options)
+      check_conflicts(options)
       copy(copy_target, options, env: env, stdout: stdout, stderr: stderr)
     rescue OptionParser::ParseError, UsageError => e
       stderr.puts "oops: #{e.message}"
@@ -69,13 +70,22 @@ module Oops
     end
 
     # --json has its own shape, so the Markdown formatting options make no
-    # sense with it.
-    def self.check_json(options)
-      return unless options[:json]
+    # sense with it. --gist sends the text somewhere other than -p and --json
+    # do, and anyone with a secret gist's URL can read it, so it never carries
+    # unmasked secrets.
+    CONFLICTS = { json: %i[github time output_only], gist: %i[show_secrets print json] }.freeze
+    private_constant :CONFLICTS
 
-      conflict = %i[github time output_only].find { |key| options[key] }
-      raise UsageError, "--json cannot be combined with --#{conflict.to_s.tr('_', '-')}" if conflict
+    def self.check_conflicts(options)
+      CONFLICTS.each do |option, others|
+        next unless options[option]
+
+        conflict = others.find { |key| options[key] }
+        raise UsageError, "--#{option} cannot be combined with #{flag(conflict)}" if conflict
+      end
     end
+
+    def self.flag(key) = "--#{key.to_s.tr('_', '-')}"
 
     # Count comes from either a positional N or -n N. "err" filters the
     # selection to failed commands; without a count, one command is copied.
@@ -101,13 +111,15 @@ module Oops
       raise Failure, (target.failed_only ? "no failed command found." : "no command found yet.") if records.empty?
 
       home = env["HOME"].to_s.empty? ? Dir.home : env["HOME"]
-      formatter = Formatter.new(config: config, home: home, **options.except(:print, :json))
+      formatter = Formatter.new(config: config, home: home, **options.except(:print, :json, :gist))
       if options[:json]
         stdout.write formatter.json(records)
         return 0
       end
 
       result = formatter.format(records)
+      return gist(result, config: config, env: env, stdout: stdout, stderr: stderr) if options[:gist]
+
       if options[:print]
         stdout.write result.text
         return 0
@@ -122,6 +134,26 @@ module Oops
         raise Failure, e.message
       end
       stdout.puts "copied: $ #{report_command(result.command_line)} (#{report_counts(result)})"
+      0
+    end
+
+    # The gist is made before the clipboard is tried, so a missing or failing
+    # clipboard only costs a warning: the URL is on stdout either way.
+    def self.gist(result, config:, env:, stdout:, stderr:)
+      url = begin
+        Gist.create(result.text, description: "oops: $ #{report_command(result.command_line)}", env: env)
+      rescue Gist::Error => e
+        raise Failure, e.message
+      end
+      stdout.puts "gist: #{url} (#{report_counts(result)})"
+      begin
+        backend = Clipboard.detect(config.clipboard, env: env)
+        raise Clipboard::Error, NO_CLIPBOARD if backend.nil?
+
+        backend.copy(url)
+      rescue Clipboard::Error => e
+        stderr.puts "oops: warning: the URL was not copied: #{e.message}"
+      end
       0
     end
 
@@ -259,7 +291,7 @@ module Oops
       0
     end
 
-    private_class_method :positive, :check_json, :target, :copy, :report_command, :report_counts, :recording_log,
-                         :toggle, :write_marker, :status, :clear, :doctor
+    private_class_method :positive, :check_conflicts, :flag, :target, :copy, :gist, :report_command, :report_counts,
+                         :recording_log, :toggle, :write_marker, :status, :clear, :doctor
   end
 end
