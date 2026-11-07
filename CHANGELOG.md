@@ -2,7 +2,7 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
-## Unreleased
+## 0.5.0 - 2026-11-07
 
 - Added: `--json` writes the selected commands to stdout as a JSON array (command, directory, exit code, start and end times, output), cleaned and masked as on the clipboard, for scripts and agents ([#43](https://github.com/ysb3996-blip/oops/issues/43)).
 - Removed: the `--tail N` and `--head N` options. Nobody asked to keep them in [#30](https://github.com/ysb3996-blip/oops/issues/30). To shorten a long output, pipe it instead, e.g. `oops -p | tail -n 50 | pbcopy` on macOS.
