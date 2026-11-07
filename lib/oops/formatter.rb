@@ -3,27 +3,24 @@ module Oops
   #
   # Per field (command line and output) the pipeline is: strip ANSI, scrub
   # invalid UTF-8, shorten the home directory to "~", mask secrets, apply the
-  # config replace table. Output is then truncated (head/tail) and fenced.
+  # config replace table. Output is then fenced.
   # With show_secrets, the home/mask/replace steps are skipped. With time, a
   # "# <local start time>" line precedes each command; with output_only, the
   # "$ command" line is left out.
   class Formatter
     GITHUB_COLLAPSE_LINES = 30
 
-    # lines: output lines shown after formatting, summed over records. The
-    # "... N lines omitted ..." marker is not counted.
+    # lines: output lines after formatting, summed over records.
     # command_line: the formatted first command, without "$ " or indentation.
     Result = Struct.new(:text, :lines, :masked_count, :command_line)
 
     TIME_FORMAT = "%Y-%m-%d %H:%M:%S %:z".freeze
 
-    def initialize(config:, home: Dir.home, show_secrets: false, head: nil, tail: nil, github: false,
-                   time: false, output_only: false)
+    def initialize(config:, home: Dir.home, show_secrets: false, github: false, time: false,
+                   output_only: false)
       @config = config
       @home = home.to_s
       @show_secrets = show_secrets
-      @head = head
-      @tail = tail
       @github = github
       @time = time
       @output_only = output_only
@@ -41,7 +38,7 @@ module Oops
 
     def build_block(record)
       command = clean(record.cmd.to_s).sub(/\s+\z/, "")
-      shown, count = shown_lines(clean(PromptSp.strip(record.output.to_s)))
+      shown = output_lines(clean(PromptSp.strip(record.output.to_s)))
       exit_code = record.exit
       exit_code = nil if exit_code.to_i.zero?
       stamp = start_time(record)
@@ -50,7 +47,7 @@ module Oops
       body << "$ #{command.gsub("\n", "\n  ").gsub(/^ +$/, '')}" unless @output_only
       body.concat(shown)
       body << "(exit #{exit_code})" if exit_code
-      { command: command, exit: exit_code, count: count, time: stamp, content: body.join("\n") }
+      { command: command, exit: exit_code, count: shown.size, time: stamp, content: body.join("\n") }
     end
 
     # Local time the command started, or nil without --time or for a record
@@ -61,25 +58,11 @@ module Oops
       Time.at(record.started_at.to_i).strftime(TIME_FORMAT)
     end
 
-    # Returns [lines to show, real output line count]: trailing blank lines
-    # dropped, then head/tail truncation.
-    def shown_lines(text)
+    # Output lines without the trailing blank ones.
+    def output_lines(text)
       lines = text.split("\n", -1)
       lines.pop while lines.any? && lines.last.strip.empty?
-      shown = truncate(lines)
-      [shown, shown.equal?(lines) ? lines.size : shown.size - 1]
-    end
-
-    def truncate(lines)
-      return lines if @head.nil? && @tail.nil?
-
-      head = @head.to_i
-      tail = @tail.to_i
-      omitted = lines.size - head - tail
-      return lines if omitted <= 0
-
-      marker = "... #{omitted.to_s.reverse.scan(/\d{1,3}/).join(',').reverse} lines omitted ..."
-      [*lines.first(head), marker, *(tail.zero? ? [] : lines.last(tail))]
+      lines
     end
 
     def clean(raw)

@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- 削除: `--tail N` と `--head N` オプションを消しました。[#30](https://github.com/ysb3996-blip/oops/issues/30) で残してほしいという声はありませんでした。長い出力を短くするときは macOS なら `oops -p | tail -n 50 | pbcopy` のようにパイプでつないでください。
 - 追加: このリポジトリに Claude Code のプラグインを置きました。`/plugin install oops --marketplace ysb3996-blip/oops` で入れると `/oops:err` が使え、そのタブで最後に失敗したコマンドを会話に入れます。直前に失敗したコマンドについて聞くと、Claude Code が自分から使います。README の「AI コーディングエージェントと使う」を参照してください。
 
 ## 0.4.1 - 2026-11-04

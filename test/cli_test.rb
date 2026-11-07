@@ -199,10 +199,10 @@ class CLICopyTest < Minitest::Test
   def test_short_count_option_combines_with_formatting_options
     add("c1", "one\r\ntwo\r\nthree\r\n")
     add("c2", "four\r\nfive\r\nsix\r\n")
-    expected = run_cli("2", "--github", "--head", "1", "--tail", "1")
+    expected = run_cli("2", "--github", "--output-only")
     expected_clip = clip
     assert_equal 0, expected.first
-    assert_equal expected, run_cli("--github", "-n", "2", "--head", "1", "--tail", "1")
+    assert_equal expected, run_cli("--github", "-n", "2", "--output-only")
     assert_equal expected_clip, clip
   end
 
@@ -254,10 +254,10 @@ class CLICopyTest < Minitest::Test
   def test_err_with_count_copies_available_failures_and_supports_formatting
     add("bad", "one\r\ntwo\r\nthree\r\n", exit: 2)
     add("good", "ok\r\n")
-    expected = run_cli("err", "--github", "--head", "1", "--tail", "1")
+    expected = run_cli("err", "--github", "--output-only")
     expected_clip = clip
     assert_equal 0, expected.first
-    assert_equal expected, run_cli("err", "-n", "5", "--github", "--head", "1", "--tail", "1")
+    assert_equal expected, run_cli("err", "-n", "5", "--github", "--output-only")
     assert_equal expected_clip, clip
   end
 
@@ -267,12 +267,7 @@ class CLICopyTest < Minitest::Test
     refute File.exist?(@clip)
   end
 
-  def test_tail_head_and_show_secrets_options
-    add("seq 5", "1\r\n2\r\n3\r\n4\r\n5\r\n")
-    assert_equal [0, "copied: $ seq 5 (1 lines)\n", ""], run_cli("--tail", "1")
-    assert_equal "```\n$ seq 5\n... 4 lines omitted ...\n5\n```\n", clip
-    assert_equal 0, run_cli("--head=1", "--tail=1").first
-    assert_equal "```\n$ seq 5\n1\n... 3 lines omitted ...\n5\n```\n", clip
+  def test_show_secrets_option
     add("echo t", "ghp_#{'a' * 36}\r\n")
     assert_equal [0, "copied: $ echo t (1 lines)\n", ""], run_cli("--show-secrets")
     assert_equal "```\n$ echo t\nghp_#{'a' * 36}\n```\n", clip
@@ -450,18 +445,14 @@ class CLICopyTest < Minitest::Test
     add("c1", "one\r\n")
     assert_equal [2, "", "oops: N must be a positive integer\n"], run_cli("0")
     assert_equal [2, "", "oops: N must be a positive integer\n"], run_cli("2x")
-    assert_equal [2, "", "oops: --tail must be a positive integer\n"], run_cli("--tail", "0")
-    assert_equal [2, "", "oops: --tail must be a positive integer\n"], run_cli("--tail=abc")
-    assert_equal [2, "", "oops: --head must be a positive integer\n"], run_cli("err", "--head", "-3")
     refute File.exist?(@clip)
   end
 
   def test_unknown_command_and_extra_arguments_exit_two
     assert_equal [2, "", "oops: unknown command: frobnicate\n"], run_cli("frobnicate")
     assert_equal [2, "", "oops: unexpected argument: err\n"], run_cli("3", "err")
-    status, _, err = run_cli("--tail")
-    assert_equal 2, status
-    assert_match(/\Aoops: missing argument: --tail/, err)
+    assert_equal [2, "", "oops: invalid option: --tail\n"], run_cli("--tail", "50")
+    assert_equal [2, "", "oops: invalid option: --head\n"], run_cli("err", "--head", "20")
   end
 
   def test_time_and_output_only_options

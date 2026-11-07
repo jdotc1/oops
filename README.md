@@ -120,8 +120,6 @@ Options for `oops`, `oops N` and `oops err`:
 |---|---|
 | `-n N` | Copy the last N commands (with `err`, the last N failed commands) |
 | `--github` | Format for a GitHub issue or PR comment |
-| `--tail N` | Keep only the last N output lines |
-| `--head N` | Keep only the first N output lines (with `--tail`, keeps both ends) |
 | `--time` | Add the time each command started as a `# 2026-10-31 19:30:09 +09:00` line |
 | `--output-only` | Leave out the `$ command` line and copy only the output |
 | `-p`, `--print` | Write the text to stdout instead of the clipboard (no `copied:` line) |
@@ -177,10 +175,6 @@ $ bundle exec rspec
 
 </details>
 ````
-
-### `--tail` and `--head`
-
-`oops --tail 50` keeps the last 50 lines of output and puts `... 2,950 lines omitted ...` before them. `--head 20` keeps the first 20 and puts the marker after. With both, the middle is replaced by one marker line. With `oops 3`, the limits apply to each command.
 
 ### `--time` and `--output-only`
 
