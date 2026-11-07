@@ -222,7 +222,7 @@ $ claude
 > `oops -p err` を実行して、失敗したテストを直して。
 ```
 
-Claude Code では `! oops -p err` と打って、自分で出力を会話に入れることもできます。直近 3 つのコマンドなら `-n 3` を付けます。スクリプトやエージェントが終了コードと出力を別々に扱いたいときは [`--json`](#--json) を使えます。ほかのターミナルのエージェントも、シェルコマンドに環境変数を引き継ぐものなら同じように使えます。
+Claude Code では `! oops -p err` と打って、自分で出力を会話に入れることもできます。直近 3 つのコマンドなら `-n 3` を付けます。スクリプトやエージェントが終了コードと出力を別々に扱いたいときは [`--json`](#--json) を使えます。ほかのターミナルのエージェントも、シェルコマンドに環境変数を引き継ぐものなら同じように使えます（例: [Codex CLI](#codex-cli)）。
 
 特に役立つのは、コマンドを実行し直したくないときです。
 
@@ -258,6 +258,18 @@ $ARGUMENTS
 ```
 
 まだ何も失敗していないときや、タブが記録されていないときは、代わりに oops のメッセージが表示されます。
+
+### Codex CLI
+
+記録中のタブで起動した [Codex CLI](https://github.com/openai/codex) も `oops -p err` を実行できます（例: `codex exec "Run oops -p err and fix the failing test"`）。Codex の `read-only` のサンドボックスでも動きます。名指ししなくても使ってほしいときは、次の内容を `~/.codex/AGENTS.md`（全プロジェクト共通）かプロジェクトの `AGENTS.md` に足します。
+
+```markdown
+## Failed commands in my terminal
+
+This terminal tab is recorded by [oops](https://github.com/ysb3996-blip/oops). When I ask about a command I ran that failed, run `oops -p err` to read its command line, output and exit code (secrets are masked) instead of asking me to paste it or running it again. `oops -p -n 3` shows the last 3 commands.
+```
+
+これがあれば「さっきのコマンド、なんで失敗したの？」だけで足ります。無いと、Codex は「端末は見えない」と答えます。
 
 ## 設定
 
