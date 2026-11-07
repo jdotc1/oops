@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Docs: the README shows how to use oops from Codex CLI, with an `AGENTS.md` snippet so Codex reads the failed command without being told.
+
 ## 0.5.0 - 2026-11-07
 
 - Added: `--json` writes the selected commands to stdout as a JSON array (command, directory, exit code, start and end times, output), cleaned and masked as on the clipboard, for scripts and agents ([#43](https://github.com/ysb3996-blip/oops/issues/43)).

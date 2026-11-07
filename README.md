@@ -222,7 +222,7 @@ $ claude
 > Run `oops -p err` and fix the failing test.
 ```
 
-In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands, or use [`--json`](#--json) when a script or agent wants the exit code and output as separate fields. Other terminal agents work the same way when they pass your environment to their shell commands.
+In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands, or use [`--json`](#--json) when a script or agent wants the exit code and output as separate fields. Other terminal agents work the same way when they pass your environment to their shell commands; see [Codex CLI](#codex-cli) for one.
 
 This helps most when running the command again is a bad idea:
 
@@ -258,6 +258,18 @@ $ARGUMENTS
 ```
 
 When nothing has failed yet, or the tab is not recorded, Claude Code shows oops's message instead.
+
+### Codex CLI
+
+[Codex CLI](https://github.com/openai/codex) started in a recorded tab can run `oops -p err` too, for example `codex exec "Run oops -p err and fix the failing test"`. It works in Codex's `read-only` sandbox as well. To have it look there without being told, add this to `~/.codex/AGENTS.md` (all projects) or to the project's `AGENTS.md`:
+
+```markdown
+## Failed commands in my terminal
+
+This terminal tab is recorded by [oops](https://github.com/ysb3996-blip/oops). When I ask about a command I ran that failed, run `oops -p err` to read its command line, output and exit code (secrets are masked) instead of asking me to paste it or running it again. `oops -p -n 3` shows the last 3 commands.
+```
+
+With that in place, "my last command failed, why?" is enough. Without it, Codex answers that it cannot see your terminal.
 
 ## Configuration
 
