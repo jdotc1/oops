@@ -18,9 +18,9 @@ module Oops
 
     # Returns the gist URL. Raises Error when gh is missing, not logged in,
     # fails, times out or prints no URL. env supplies PATH for finding gh.
-    def create(text, description:, env: ENV)
+    def create(text, description:, env: ENV, timeout: TIMEOUT)
       argv = ["gh", "gist", "create", "-", "--filename", FILENAME, "--desc", description]
-      out, err, status = capture(argv, text, env)
+      out, err, status = capture(argv, text, env, timeout)
       raise Error, failure_message(err) unless status.success?
 
       url = out.lines.map(&:strip).reverse.find { |line| line.start_with?("https://") }
@@ -29,7 +29,7 @@ module Oops
       url
     end
 
-    def capture(argv, text, env)
+    def capture(argv, text, env, timeout)
       spawn_env = env["PATH"] ? { "PATH" => env["PATH"] } : {}
       Open3.popen3(spawn_env, *argv, pgroup: true) do |stdin, stdout, stderr, wait|
         readers = [Thread.new { stdout.read }, Thread.new { stderr.read }]
@@ -39,9 +39,10 @@ module Oops
           nil
         end
         stdin.close
-        unless wait.join(TIMEOUT)
+        unless wait.join(timeout)
           kill_group(wait.pid)
-          raise Error, "gh timed out after #{TIMEOUT}s"
+          readers.each(&:kill)
+          raise Error, "gh timed out after #{timeout}s"
         end
         [readers[0].value.to_s, readers[1].value.to_s, wait.value]
       end
