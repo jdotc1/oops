@@ -29,6 +29,7 @@ class CLITest < Minitest::Test
     assert_includes out.string, "--time"
     assert_includes out.string, "--output-only"
     assert_includes out.string, "-p, --print"
+    assert_includes out.string, "--json"
   end
 
   def test_init_prints_snippet_with_absolute_bin
@@ -363,6 +364,42 @@ class CLICopyTest < Minitest::Test
   def test_print_masks_secrets
     add("echo $T", "ghp_#{'a' * 36}\r\n")
     assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", ""], run_cli("-p")
+  end
+
+  def test_json_writes_records_to_stdout_without_touching_clipboard
+    add("c1", "one\r\n")
+    add("oops", "copied\r\n")
+    add("c2", "ghp_#{'a' * 36}\r\n", exit: 3)
+    stamp = Time.at(1).strftime("%Y-%m-%dT%H:%M:%S%:z")
+    ended = Time.at(2).strftime("%Y-%m-%dT%H:%M:%S%:z")
+    with_detect(->(*, **) { flunk "clipboard must not be used with --json" }) do
+      status, out, err = run_cli("--json", "-n", "2")
+      assert_equal [0, ""], [status, err]
+      assert_equal [{ "command" => "c1", "cwd" => "~", "exit" => 0, "started_at" => stamp, "ended_at" => ended,
+                      "output" => "one" },
+                    { "command" => "c2", "cwd" => "~", "exit" => 3, "started_at" => stamp, "ended_at" => ended,
+                      "output" => "[secret]" }],
+                   JSON.parse(out)
+      assert_equal out, run_cli("2", "--json", "-p")[1]
+      refute File.exist?(@clip)
+    end
+  end
+
+  def test_json_with_err_and_show_secrets
+    add("bad", "ghp_#{'a' * 36}\r\n", exit: 1)
+    add("good", "ok\r\n")
+    items = JSON.parse(run_cli("err", "--json", "--show-secrets")[1])
+    assert_equal([["bad", 1, "ghp_#{'a' * 36}"]], items.map { |i| i.values_at("command", "exit", "output") })
+    File.write(@session, "")
+    assert_equal [1, "", "oops: no command found yet.\n"], run_cli("--json")
+  end
+
+  def test_json_rejects_markdown_formatting_options
+    add("c1", "one\r\n")
+    %w[--github --time --output-only].each do |option|
+      assert_equal [2, "", "oops: --json cannot be combined with #{option}\n"], run_cli("--json", option)
+      assert_equal [2, "", "oops: --json cannot be combined with #{option}\n"], run_cli(option, "err", "--json")
+    end
   end
 
   def test_print_works_when_no_clipboard_tool_is_available

@@ -123,13 +123,14 @@ Options for `oops`, `oops N` and `oops err`:
 | `--time` | Add the time each command started as a `# 2026-10-31 19:30:09 +09:00` line |
 | `--output-only` | Leave out the `$ command` line and copy only the output |
 | `-p`, `--print` | Write the text to stdout instead of the clipboard (no `copied:` line) |
+| `--json` | Write the commands as JSON to stdout, for scripts and agents |
 | `--show-secrets` | Do not mask secrets and do not apply the replace table |
 
 `N` must be a positive integer. Specify the command count once, either as a positional `N` or with `-n N`; combining them or repeating `-n` is a usage error. If fewer matching commands are available, oops copies those it finds. `-n` can be combined with the formatting options above.
 
 `oops` never copies itself: if the previous command was `oops`, you get the command before it.
 
-Exit codes: `0` copied (or printed with `--print`), `1` nothing copied (not recording, no command yet, no failed command, paused, or the clipboard command failed), `2` usage error.
+Exit codes: `0` copied (or printed with `--print` or `--json`), `1` nothing copied (not recording, no command yet, no failed command, paused, or the clipboard command failed), `2` usage error.
 
 ### Default output
 
@@ -188,6 +189,23 @@ $ bundle exec rspec
 ```
 ````
 
+### `--json`
+
+`oops --json` writes the selected commands to stdout as a JSON array, oldest first, instead of copying a Markdown block. It works with `N`, `err`, `-n` and `--show-secrets`; `--github`, `--time` and `--output-only` shape the Markdown and are a usage error with it. Command, directory and output are cleaned and masked as on the clipboard. `output` has no trailing newline, `exit` is the exit code (`0` on success), and the times are ISO 8601 in local time (`null` when unknown):
+
+```json
+[
+  {
+    "command": "ls /nothing-here",
+    "cwd": "~/app",
+    "exit": 1,
+    "started_at": "2026-11-07T10:19:05+09:00",
+    "ended_at": "2026-11-07T10:19:05+09:00",
+    "output": "ls: /nothing-here: No such file or directory"
+  }
+]
+```
+
 ### `oops status`
 
 `oops status` prints `recording`, `paused` or `off` (this shell is not recorded, or its log was deleted) and exits `0` only when recording. It prints no error, so a prompt or script can call it, for example with a [starship custom module](https://starship.rs/config/#custom-commands). Each call starts Ruby, which takes roughly 0.1 to 0.2 seconds; `oops doctor` tells more when the answer is `off`.
@@ -204,7 +222,7 @@ $ claude
 > Run `oops -p err` and fix the failing test.
 ```
 
-In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands. Other terminal agents work the same way when they pass your environment to their shell commands.
+In Claude Code you can also type `! oops -p err` to put the output into the conversation yourself. Add `-n 3` for the last 3 commands, or use [`--json`](#--json) when a script or agent wants the exit code and output as separate fields. Other terminal agents work the same way when they pass your environment to their shell commands.
 
 This helps most when running the command again is a bad idea:
 

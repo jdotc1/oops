@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- 追加: `--json` で、選んだコマンドを JSON の配列（コマンド・ディレクトリ・終了コード・開始と終了の時刻・出力）として標準出力へ書き出せるようにしました。クリップボードと同じように整えてマスクします。スクリプトやエージェント向けです（[#43](https://github.com/ysb3996-blip/oops/issues/43)）。
 - 削除: `--tail N` と `--head N` オプションを消しました。[#30](https://github.com/ysb3996-blip/oops/issues/30) で残してほしいという声はありませんでした。長い出力を短くするときは macOS なら `oops -p | tail -n 50 | pbcopy` のようにパイプでつないでください。
 - 追加: このリポジトリに Claude Code のプラグインを置きました。`/plugin install oops --marketplace ysb3996-blip/oops` で入れると `/oops:err` が使え、そのタブで最後に失敗したコマンドを会話に入れます。直前に失敗したコマンドについて聞くと、Claude Code が自分から使います。README の「AI コーディングエージェントと使う」を参照してください。
 
