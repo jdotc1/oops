@@ -25,7 +25,8 @@ module Oops
       when "clear" then return clear(argv.drop(1), env: env, stdout: stdout)
       end
 
-      options = { github: false, show_secrets: false, time: false, output_only: false, print: false }
+      options = { github: false, show_secrets: false, time: false, output_only: false, print: false,
+                  json: false }
       count = nil
       parser = OptionParser.new do |o|
         o.banner = "Usage: oops [N | err] [-n N] [options]\n       " \
@@ -40,6 +41,7 @@ module Oops
         o.on("--output-only", "Leave out the command line, keep the output") { options[:output_only] = true }
         o.on("--show-secrets", "Do not mask secrets or apply the replace table") { options[:show_secrets] = true }
         o.on("-p", "--print", "Write the text to stdout instead of the clipboard") { options[:print] = true }
+        o.on("--json", "Write the commands as JSON to stdout") { options[:json] = true }
         o.on("-v", "--version", "Print version and exit") do
           stdout.puts "oops #{VERSION}"
           return 0
@@ -49,7 +51,9 @@ module Oops
           return 0
         end
       end
-      copy(target(parser.parse(argv), count: count), options, env: env, stdout: stdout, stderr: stderr)
+      copy_target = target(parser.parse(argv), count: count)
+      check_json(options)
+      copy(copy_target, options, env: env, stdout: stdout, stderr: stderr)
     rescue OptionParser::ParseError, UsageError => e
       stderr.puts "oops: #{e.message}"
       2
@@ -62,6 +66,15 @@ module Oops
       raise UsageError, "#{name} must be a positive integer" unless value.match?(POSITIVE_INTEGER) && value.to_i >= 1
 
       value.to_i
+    end
+
+    # --json has its own shape, so the Markdown formatting options make no
+    # sense with it.
+    def self.check_json(options)
+      return unless options[:json]
+
+      conflict = %i[github time output_only].find { |key| options[key] }
+      raise UsageError, "--json cannot be combined with --#{conflict.to_s.tr('_', '-')}" if conflict
     end
 
     # Count comes from either a positional N or -n N. "err" filters the
@@ -88,8 +101,13 @@ module Oops
       raise Failure, (target.failed_only ? "no failed command found." : "no command found yet.") if records.empty?
 
       home = env["HOME"].to_s.empty? ? Dir.home : env["HOME"]
-      format_options = options.except(:print)
-      result = Formatter.new(config: config, home: home, **format_options).format(records)
+      formatter = Formatter.new(config: config, home: home, **options.except(:print, :json))
+      if options[:json]
+        stdout.write formatter.json(records)
+        return 0
+      end
+
+      result = formatter.format(records)
       if options[:print]
         stdout.write result.text
         return 0
@@ -241,7 +259,7 @@ module Oops
       0
     end
 
-    private_class_method :positive, :target, :copy, :report_command, :report_counts, :recording_log, :toggle,
-                         :write_marker, :status, :clear, :doctor
+    private_class_method :positive, :check_json, :target, :copy, :report_command, :report_counts, :recording_log,
+                         :toggle, :write_marker, :status, :clear, :doctor
   end
 end

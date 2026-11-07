@@ -1,5 +1,8 @@
+require "json"
+
 module Oops
-  # Turns captured records into the paste-ready clipboard text.
+  # Turns captured records into the paste-ready clipboard text, or into JSON
+  # for scripts and agents (#json).
   #
   # Per field (command line and output) the pipeline is: strip ANSI, scrub
   # invalid UTF-8, shorten the home directory to "~", mask secrets, apply the
@@ -15,6 +18,7 @@ module Oops
     Result = Struct.new(:text, :lines, :masked_count, :command_line)
 
     TIME_FORMAT = "%Y-%m-%d %H:%M:%S %:z".freeze
+    ISO_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S%:z".freeze
 
     def initialize(config:, home: Dir.home, show_secrets: false, github: false, time: false,
                    output_only: false)
@@ -32,6 +36,16 @@ module Oops
       blocks = records.map { |record| build_block(record) }
       text = @github ? blocks.map { |b| github_block(b) }.join("\n") : plain_text(blocks)
       Result.new(text, blocks.sum { |b| b[:count] }, @masked, blocks.first&.dig(:command))
+    end
+
+    # The records as a pretty-printed JSON array, oldest first. Command, cwd
+    # and output go through the same cleaning as the Markdown text; the
+    # formatting options (github, time, output_only) do not apply. Times are
+    # ISO 8601 in local time, or null when the record has none.
+    def json(records)
+      @masked = 0
+      items = records.map { |record| json_item(record) }
+      "#{JSON.pretty_generate(items)}\n"
     end
 
     private
@@ -56,6 +70,19 @@ module Oops
       return nil unless @time && record.started_at
 
       Time.at(record.started_at.to_i).strftime(TIME_FORMAT)
+    end
+
+    def json_item(record)
+      { command: clean(record.cmd.to_s).sub(/\s+\z/, ""),
+        cwd: record.cwd && clean(record.cwd.to_s),
+        exit: record.exit,
+        started_at: iso_time(record.started_at),
+        ended_at: iso_time(record.ended_at),
+        output: output_lines(clean(PromptSp.strip(record.output.to_s))).join("\n") }
+    end
+
+    def iso_time(seconds)
+      seconds && Time.at(seconds.to_i).strftime(ISO_TIME_FORMAT)
     end
 
     # Output lines without the trailing blank ones.

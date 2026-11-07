@@ -51,6 +51,41 @@ class FormatterTest < Minitest::Test
                     "dev@laptop"
   end
 
+  def iso(seconds) = Time.at(seconds).strftime("%Y-%m-%dT%H:%M:%S%:z")
+
+  def test_json_lists_cleaned_records_oldest_first
+    a = rec(cmd: "export TOKEN=abc123 ", out: "\e[31m/Users/takeuchi/app\e[0m ghp_#{'a' * 36}\n\n", exit: 1)
+    a.cwd = "/Users/takeuchi/app"
+    a.started_at = 1_761_912_185
+    a.ended_at = 1_761_912_190
+    b = rec(cmd: "true", out: "")
+    b.started_at = nil
+    b.ended_at = nil
+    text = fmt.json([a, b])
+    assert text.end_with?("]\n")
+    assert_equal [{ "command" => "export TOKEN=[secret]", "cwd" => "~/app", "exit" => 1,
+                    "started_at" => iso(1_761_912_185), "ended_at" => iso(1_761_912_190),
+                    "output" => "~/app [secret]" },
+                  { "command" => "true", "cwd" => "/", "exit" => 0, "started_at" => nil, "ended_at" => nil,
+                    "output" => "" }],
+                 JSON.parse(text)
+  end
+
+  def test_json_keeps_output_lines_and_multiline_commands
+    r = rec(cmd: "cat <<EOF\nhi\nEOF", out: "one\r\n  two\n")
+    item = JSON.parse(fmt.json([r])).first
+    assert_equal "cat <<EOF\nhi\nEOF", item["command"]
+    assert_equal "one\n  two", item["output"]
+  end
+
+  def test_json_with_show_secrets_keeps_the_raw_text
+    r = rec(cmd: "cd /Users/takeuchi", out: "ghp_#{'a' * 36}\n")
+    r.cwd = "/Users/takeuchi"
+    item = JSON.parse(fmt(show_secrets: true).json([r])).first
+    assert_equal ["cd /Users/takeuchi", "/Users/takeuchi", "ghp_#{'a' * 36}"],
+                 item.values_at("command", "cwd", "output")
+  end
+
   def test_multiple_records_in_one_fence
     t = fmt.format([rec(cmd: "a", out: "1\n"), rec(cmd: "b", out: "2\n", exit: 2)]).text
     assert_equal "```\n$ a\n1\n\n$ b\n2\n(exit 2)\n```\n", t
