@@ -41,8 +41,10 @@ class GistTest < Minitest::Test
     assert_equal "gh gist create failed: HTTP 422: Validation Failed", error.message
   end
 
+  # PATH holds only the fake: CI runners have a real gh in /usr/bin, which
+  # spawn would run instead of the non-executable one.
   def test_gh_that_is_not_executable_counts_as_missing
-    env = gh("exit 0", mode: 0o644)
+    env = gh("exit 0", mode: 0o644).merge("PATH" => @dir)
     error = assert_raises(Oops::Gist::Error) { create(env) }
     assert_equal Oops::Gist::NO_GH, error.message
   end
