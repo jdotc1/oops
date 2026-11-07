@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- Removed: the `--tail N` and `--head N` options. Nobody asked to keep them in [#30](https://github.com/ysb3996-blip/oops/issues/30). To shorten a long output, pipe it instead, e.g. `oops -p | tail -n 50 | pbcopy` on macOS.
 - Added: a Claude Code plugin in this repository. `/plugin install oops --marketplace ysb3996-blip/oops` adds `/oops:err`, which puts the tab's last failed command into the conversation; Claude Code also uses it when you ask about a command that just failed. See "With AI coding agents" in the README.
 
 ## 0.4.1 - 2026-11-04

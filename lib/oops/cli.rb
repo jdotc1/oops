@@ -25,8 +25,7 @@ module Oops
       when "clear" then return clear(argv.drop(1), env: env, stdout: stdout)
       end
 
-      options = { head: nil, tail: nil, github: false, show_secrets: false, time: false, output_only: false,
-                  print: false }
+      options = { github: false, show_secrets: false, time: false, output_only: false, print: false }
       count = nil
       parser = OptionParser.new do |o|
         o.banner = "Usage: oops [N | err] [-n N] [options]\n       " \
@@ -37,8 +36,6 @@ module Oops
           count = positive(v, "-n")
         end
         o.on("--github", "Format for a GitHub issue or PR comment") { options[:github] = true }
-        o.on("--tail N", "Keep only the last N output lines") { |v| options[:tail] = positive(v, "--tail") }
-        o.on("--head N", "Keep only the first N output lines") { |v| options[:head] = positive(v, "--head") }
         o.on("--time", "Add the time each command started") { options[:time] = true }
         o.on("--output-only", "Leave out the command line, keep the output") { options[:output_only] = true }
         o.on("--show-secrets", "Do not mask secrets or apply the replace table") { options[:show_secrets] = true }

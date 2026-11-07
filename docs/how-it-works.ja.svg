@@ -154,9 +154,9 @@
         <text x="96" y="0" font-size="19" fill="#2B2B2B">直前の3コマンドを1つのブロックに</text>
       </g>
       <g transform="translate(700 104)">
-        <rect x="0" y="-22" width="166" height="32" rx="8" fill="#FDECE9"/>
-        <text x="83.0" y="0" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#C8432F">oops --tail 50</text>
-        <text x="180" y="0" font-size="19" fill="#2B2B2B">出力の最後の50行だけ</text>
+        <rect x="0" y="-22" width="96" height="32" rx="8" fill="#FDECE9"/>
+        <text x="48.0" y="0" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#C8432F">oops -p</text>
+        <text x="110" y="0" font-size="19" fill="#2B2B2B">コピーせず画面に出す</text>
       </g>
       <g transform="translate(56 150)">
         <rect x="0" y="-22" width="104" height="32" rx="8" fill="#FDECE9"/>
@@ -164,9 +164,9 @@
         <text x="118" y="0" font-size="19" fill="#2B2B2B">直前の失敗したコマンド</text>
       </g>
       <g transform="translate(700 150)">
-        <rect x="0" y="-22" width="166" height="32" rx="8" fill="#FDECE9"/>
-        <text x="83.0" y="0" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#C8432F">oops --head 20</text>
-        <text x="180" y="0" font-size="19" fill="#2B2B2B">出力の最初の20行だけ</text>
+        <rect x="0" y="-22" width="140" height="32" rx="8" fill="#FDECE9"/>
+        <text x="70.0" y="0" text-anchor="middle" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#C8432F">oops --time</text>
+        <text x="154" y="0" font-size="19" fill="#2B2B2B">各コマンドの開始時刻を付ける</text>
       </g>
       <g transform="translate(56 196)">
         <rect x="0" y="-22" width="162" height="32" rx="8" fill="#FDECE9"/>

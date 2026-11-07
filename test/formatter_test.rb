@@ -51,18 +51,6 @@ class FormatterTest < Minitest::Test
                     "dev@laptop"
   end
 
-  def test_tail_and_head
-    out = "#{(1..100).map { |i| "l#{i}" }.join("\n")}\n"
-    assert_includes fmt(tail: 2).format([rec(cmd: "x", out: out)]).text, "... 98 lines omitted ...\nl99\nl100\n"
-    assert_includes fmt(head: 1, tail: 1).format([rec(cmd: "x", out: out)]).text,
-                    "l1\n... 98 lines omitted ...\nl100\n"
-  end
-
-  def test_omitted_count_uses_thousands_separator
-    out = "#{(1..3001).map { 'l' }.join("\n")}\n"
-    assert_includes fmt(tail: 1).format([rec(cmd: "x", out: out)]).text, "... 3,000 lines omitted ..."
-  end
-
   def test_multiple_records_in_one_fence
     t = fmt.format([rec(cmd: "a", out: "1\n"), rec(cmd: "b", out: "2\n", exit: 2)]).text
     assert_equal "```\n$ a\n1\n\n$ b\n2\n(exit 2)\n```\n", t
