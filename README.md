@@ -343,14 +343,14 @@ Masking is pattern based, so it is a safety net, not a guarantee: a secret in a 
 
 ## Troubleshooting
 
-`oops doctor` prints one `label: value` line per check. When a line looks wrong, find it below. Paths and versions in the examples are placeholders.
+`oops doctor` prints one `label: value` line per check. When a line looks wrong, find it below. Paths in the examples are placeholders.
 
-- `recording: no`: this tab is not recorded. Check that the `oops init` line is in your rc file and comes after whatever puts oops's Ruby on your `PATH` (see "Set up your shell"), then open a new tab. With powerlevel10k, the line must be above the instant prompt block.
+- `recording: no`: this tab is not recorded (the shell line then shows `hooks: missing` too, which is expected). Check that the `oops init` line is in your rc file and comes after whatever puts oops's Ruby on your `PATH` (see "Set up your shell"), then open a new tab. With powerlevel10k, the line must be above the instant prompt block.
 - `recording: yes (/Users/you/.local/state/oops/sessions/... - log file missing)`: the tab's log was deleted while the tab was open (for example with `rm -rf ~/.local/state/oops`). Open a new tab.
 - `this terminal: not the recorded tty (this: ..., recorded: ...)`: this shell runs on another terminal than the recorded tab it was started from (a tmux pane, or a terminal window opened from a recorded tab) and was not recorded on its own, so `oops` here reads the other tab's log. Such a shell is normally recorded on its own; check that the `oops init` line runs there too and that `OOPS_DISABLE` is not set.
 - `log writable: no (log-error: ...)`: the recorder could not write the log; the message after `log-error:` says why (a full disk, or permissions on `~/.local/state/oops`). Fix that and open a new tab.
 - `paused: yes`: recording was paused with `oops pause`. Run `oops resume`.
-- `shell: zsh 5.9, hooks: missing`: the shell is recorded but its hooks did not load, so commands are not logged. The line was probably typed at the prompt instead of being in the rc file; the recorded shell reads the rc file again and needs the line there. Open a new tab after adding it.
+- `shell: zsh, hooks: missing` while the first line says `recording: yes`: the shell is recorded but its hooks did not load, so commands are not logged. The line was probably typed at the prompt instead of being in the rc file; the recorded shell reads the rc file again and needs the line there. Open a new tab after adding it.
 - `clipboard: osc52` when you expected `pbcopy`, `wl-copy`, `xclip` or `xsel`: that tool is not on `PATH` (or `DISPLAY` / `WAYLAND_DISPLAY` is not set). Install it, or set `clipboard:` in the config. Over SSH, `osc52` is expected.
 - `config: /Users/you/.config/oops/config.yml (unknown key: clipbord)`: a misspelled key; it is ignored. `(could not parse /Users/you/.config/oops/config.yml: ...)` means the YAML is broken and oops runs without a config. `(missing)` only means there is no config file, which is fine.
 - `warning: ~/.bashrc sets a DEBUG trap ...` or `warning: ~/.bashrc assigns PROMPT_COMMAND without appending ...` (bash only): a line below the `oops init bash` line can replace oops's hooks. Move it above the oops line, or chain it (`PROMPT_COMMAND="...;$PROMPT_COMMAND"`).

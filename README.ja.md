@@ -343,14 +343,14 @@ retention_days: 7   # この日数より古いコマンドを削除する。fals
 
 ## トラブルシューティング
 
-`oops doctor` は確認ごとに `label: value` の行を 1 つ出力します。おかしい行があれば、下から探してください。例のパスとバージョンは仮のものです。
+`oops doctor` は確認ごとに `label: value` の行を 1 つ出力します。おかしい行があれば、下から探してください。例のパスは仮のものです。
 
-- `recording: no`: このタブは記録されていません。rc ファイルに `oops init` の行があり、oops の入った Ruby を `PATH` に通す設定より後ろにあるか確認し（「シェルの設定」を参照）、新しいタブを開いてください。powerlevel10k では、instant prompt のブロックより上に置く必要があります。
+- `recording: no`: このタブは記録されていません（シェルの行も `hooks: missing` になりますが、この場合はそれで正常です）。rc ファイルに `oops init` の行があり、oops の入った Ruby を `PATH` に通す設定より後ろにあるか確認し（「シェルの設定」を参照）、新しいタブを開いてください。powerlevel10k では、instant prompt のブロックより上に置く必要があります。
 - `recording: yes (/Users/you/.local/state/oops/sessions/... - log file missing)`: タブを開いたまま、そのタブのログが削除されました（`rm -rf ~/.local/state/oops` など）。新しいタブを開いてください。
 - `this terminal: not the recorded tty (this: ..., recorded: ...)`: このシェルは、起動元の記録中のタブとは別の端末（tmux のペインや、記録中のタブから開いた端末ウィンドウ）で動いていて、自分では記録されていません。そのため、ここでの `oops` は起動元のタブのログを読みます。こうしたシェルは通常それ自身で記録されるので、そこでも `oops init` の行が実行されているか、`OOPS_DISABLE` が設定されていないかを確認してください。
 - `log writable: no (log-error: ...)`: 記録用プログラムがログに書き込めませんでした。理由は `log-error:` の後に出ます（ディスクの空き不足、`~/.local/state/oops` の権限など）。原因を直して、新しいタブを開いてください。
 - `paused: yes`: `oops pause` で記録が一時停止しています。`oops resume` を実行してください。
-- `shell: zsh 5.9, hooks: missing`: シェルは記録されていますが、フックが読み込まれていないので、コマンドはログに残りません。行を rc ファイルに書かず、プロンプトで入力した可能性があります。記録される側のシェルは rc ファイルを読み直すので、行が rc ファイルに必要です。足したら新しいタブを開いてください。
+- 最初の行が `recording: yes` なのに `shell: zsh, hooks: missing`: シェルは記録されていますが、フックが読み込まれていないので、コマンドはログに残りません。行を rc ファイルに書かず、プロンプトで入力した可能性があります。記録される側のシェルは rc ファイルを読み直すので、行が rc ファイルに必要です。足したら新しいタブを開いてください。
 - `pbcopy`・`wl-copy`・`xclip`・`xsel` のつもりが `clipboard: osc52` になる: そのツールが `PATH` にありません（または `DISPLAY` / `WAYLAND_DISPLAY` が設定されていません）。インストールするか、設定ファイルで `clipboard:` を指定してください。SSH 越しなら `osc52` で正常です。
 - `config: /Users/you/.config/oops/config.yml (unknown key: clipbord)`: キーの綴りの誤りです。そのキーは無視されます。`(could not parse /Users/you/.config/oops/config.yml: ...)` は YAML が壊れていて、oops が設定なしで動いていることを表します。`(missing)` は設定ファイルがないだけで、問題ありません。
 - `warning: ~/.bashrc sets a DEBUG trap ...` または `warning: ~/.bashrc assigns PROMPT_COMMAND without appending ...`（bash のみ）: `oops init bash` の行より下の行が、oops のフックを置き換えることがあります。その行を oops の行より上に移すか、つなげてください（`PROMPT_COMMAND="...;$PROMPT_COMMAND"`）。
