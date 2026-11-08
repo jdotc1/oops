@@ -5,6 +5,7 @@
 ## 未リリース
 
 - 追加: `--gist` で、整えた文字列を GitHub CLI（`gh gist create`）経由で secret gist に上げ、その URL をコピーします。秘密情報は必ずマスクし、`--show-secrets`・`--print`・`--json` との併用は使い方の誤りになります（[#44](https://github.com/ysb3996-blip/oops/issues/44)）。
+- ドキュメント: README にトラブルシューティングの節を足しました。`oops doctor` のよく出る行の意味と、それぞれの対処を書いています（[#92](https://github.com/ysb3996-blip/oops/issues/92)）。[@wolf4032](https://github.com/wolf4032) さんによる貢献（[#93](https://github.com/ysb3996-blip/oops/pull/93)）。
 - ドキュメント: README に Codex CLI から oops を使う方法を書きました。`AGENTS.md` に足す数行があれば、名指ししなくても Codex が失敗したコマンドを読みます。
 
 ## 0.5.0 - 2026-11-07
