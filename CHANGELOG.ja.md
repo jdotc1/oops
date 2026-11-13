@@ -2,6 +2,10 @@
 
 [English](CHANGELOG.md) | 日本語
 
+## 未リリース
+
+- 修正: DigitalOcean API トークンを、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
+
 ## 0.6.0 - 2026-11-10
 
 - 追加: `--gist` で、整えた文字列を GitHub CLI（`gh gist create`）経由で secret gist に上げ、その URL をコピーします。秘密情報は必ずマスクし、`--show-secrets`・`--print`・`--json` との併用は使い方の誤りになります（[#44](https://github.com/ysb3996-blip/oops/issues/44)）。

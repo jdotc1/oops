@@ -110,6 +110,23 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_digitalocean_api_tokens_masked
+    %w[dop doo dor].each do |kind|
+      token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
+      assert_equal ["[secret]", 1], mask(token)
+      assert_equal ["credential [secret] set", 1], mask("credential #{token} set")
+    end
+  end
+
+  def test_digitalocean_token_near_misses_kept
+    token = "dop_v1_#{'a1b2c3d4' * 8}"
+    ["dop_v1_#{'a' * 63}", "doo_v1_#{'b' * 65}",
+     "dor_v2_#{'c' * 64}", "dop_v1_#{'g' * 64}",
+     "not#{token}", "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_short_or_embedded_prefixes_are_not_tokens
     %w[sk-1 task-list-item-name-that-is-long-enough npm_run
        ask-me-anything-about-this-long-thing].each do |text|
