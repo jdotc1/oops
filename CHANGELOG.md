@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Fixed: Hugging Face `hf_` access tokens are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
+
 ## 0.7.0 - 2026-11-13
 
 - Added: `oops pick` lists the last 10 commands of the tab with numbers (command masked, exit code, lines, start time) and copies the ones you type: one number, several (`1 3`) or a range (`2-4`). `-n N` lists N, and the formatting options, `--print`, `--json` and `--gist` work as with `oops N`. The list and the prompt go to stderr ([#41](https://github.com/ysb3996-blip/oops/issues/41)).
