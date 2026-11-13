@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Fixed: DigitalOcean API tokens are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
+
 ## 0.6.0 - 2026-11-10
 
 - Added: `--gist` uploads the formatted text as a secret gist through the GitHub CLI (`gh gist create`) and copies the gist's URL. Secrets are always masked; `--show-secrets`, `--print` and `--json` are a usage error with it ([#44](https://github.com/ysb3996-blip/oops/issues/44)).
