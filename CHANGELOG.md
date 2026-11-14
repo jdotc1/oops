@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- Fixed: Shopify access tokens (`shpat_`, `shpca_`, `shppa_`) are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
 - Fixed: Hugging Face `hf_` access tokens are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
 - Fixed: SendGrid API keys are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
 

@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- 修正: Shopify のアクセストークン（`shpat_`、`shpca_`、`shppa_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: Hugging Face の `hf_` アクセストークンを、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: SendGrid API キーを、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 
