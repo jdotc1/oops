@@ -110,6 +110,20 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_hugging_face_access_tokens_masked
+    token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["model [secret] loaded", 1], mask("model #{token} loaded")
+  end
+
+  def test_hugging_face_token_near_misses_kept
+    token = "hf_#{'Ab12' * 6}"
+    ["hf_#{'A' * 15}", "not#{token}", "prefix_#{token}",
+     "#{token}_suffix", "hf-model-download"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_digitalocean_api_tokens_masked
     %w[dop doo dor].each do |kind|
       token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
@@ -175,7 +189,8 @@ class SecretsTest < Minitest::Test
 
   # Guards against quadratic matching; bounds are loose to avoid flakiness.
   def test_long_single_line_inputs_stay_linear
-    ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} "].each do |unit|
+    ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} ",
+     "hf_#{'A' * 100_000}"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
       assert_operator elapsed { mask(small) }, :<, 2.0
