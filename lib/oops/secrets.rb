@@ -20,6 +20,7 @@ module Oops
       /(?<![A-Za-z0-9_])hf_[A-Za-z0-9]{16,}(?![A-Za-z0-9_])/, # Hugging Face access tokens
       /(?<![A-Za-z0-9_])(?:dop|doo|dor)_v1_[0-9a-f]{64}(?![A-Za-z0-9_])/, # DigitalOcean API tokens
       /\bAIza[0-9A-Za-z_-]{35}/,                                        # Google API keys
+      /(?<![A-Za-z0-9_-])SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, # SendGrid API keys
       /\bnpm_[A-Za-z0-9]{36}/,                                          # npm tokens
       %r{hooks\.slack\.com/services/(?<secret>[A-Za-z0-9/]+)},          # Slack webhook URLs
       /\beyJ[\w-]+\.[\w-]+\.[\w-]+/, # JWT
