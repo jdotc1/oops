@@ -21,7 +21,9 @@ module Oops
       /(?<![A-Za-z0-9_])(?:dop|doo|dor)_v1_[0-9a-f]{64}(?![A-Za-z0-9_])/, # DigitalOcean API tokens
       /\bAIza[0-9A-Za-z_-]{35}/, # Google API keys
       /(?<![A-Za-z0-9_-])SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, # SendGrid API keys
-      /(?<![A-Za-z0-9_-])lin_(?:api_[A-Za-z0-9]{40}|oauth_[A-Za-z0-9]{20,})(?![A-Za-z0-9_-])/, # Linear tokens
+      # Linear API keys have 40-character bodies; OAuth tokens have variable lengths.
+      # The OAuth minimum avoids masking short, non-credential identifiers.
+      /(?<![A-Za-z0-9_-])lin_(?:api_[A-Za-z0-9]{40}|oauth_[A-Za-z0-9]{20,})(?![A-Za-z0-9_-])/,
       /\bnpm_[A-Za-z0-9]{36}/,                                          # npm tokens
       %r{hooks\.slack\.com/services/(?<secret>[A-Za-z0-9/]+)},          # Slack webhook URLs
       /\beyJ[\w-]+\.[\w-]+\.[\w-]+/, # JWT
