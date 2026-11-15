@@ -207,7 +207,7 @@ $ bundle exec rspec
 
 ### `--json`
 
-`oops --json` writes the selected commands to stdout as a JSON array, oldest first, instead of copying a Markdown block. It works with `N`, `err`, `-n` and `--show-secrets`; `--github`, `--time` and `--output-only` shape the Markdown and are a usage error with it. Command, directory and output are cleaned and masked as on the clipboard. `output` has no trailing newline, `exit` is the exit code (`0` on success), and the times are ISO 8601 in local time (`null` when unknown):
+`oops --json` writes the selected commands to stdout as a JSON array, oldest first, instead of copying a Markdown block. It works with `N`, `err`, `-n` and `--show-secrets`; `--github`, `--time` and `--output-only` shape the Markdown and are a usage error with it. Command, directory and output are cleaned and masked as on the clipboard. `secrets_masked` counts masked secrets in that record's command and output (not its directory) and is always `0` with `--show-secrets`. `output` has no trailing newline, `exit` is the exit code (`0` on success), and the times are ISO 8601 in local time (`null` when unknown):
 
 ```json
 [
@@ -217,7 +217,8 @@ $ bundle exec rspec
     "exit": 1,
     "started_at": "2026-11-07T10:19:05+09:00",
     "ended_at": "2026-11-07T10:19:05+09:00",
-    "output": "ls: /nothing-here: No such file or directory"
+    "output": "ls: /nothing-here: No such file or directory",
+    "secrets_masked": 0
   }
 ]
 ```
