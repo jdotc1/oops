@@ -157,6 +157,20 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_linear_personal_api_keys_masked
+    token = "lin_api_#{'Ab12' * 10}"
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["credential [secret] copied", 1], mask("credential #{token} copied")
+  end
+
+  def test_linear_personal_api_key_near_misses_kept
+    token = "lin_api_#{'Ab12' * 10}"
+    ["lin_api_#{'A' * 39}", "lin_api_#{'B' * 41}",
+     "not#{token}", "prefix_#{token}", "#{token}_suffix", "lin_api_#{'A' * 39}-"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_sentry_organization_tokens_masked
     payload = "eyJpYXQiOi#{'A1b2' * 12}=="
     secret = "#{'aB3/' * 10}x+y"
@@ -245,6 +259,7 @@ class SecretsTest < Minitest::Test
      "hf_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
      "shpat_#{'a' * 100_000}_suffix",
+     "lin_api_#{'a' * 100_000}_suffix",
      "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
