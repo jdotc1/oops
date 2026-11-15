@@ -161,6 +161,10 @@ module Oops
 
         if options[:print]
           stdout.write result.text
+          if result.masked_count.positive?
+            suffix = result.masked_count == 1 ? "secret" : "secrets"
+            stderr.puts "oops: #{result.masked_count} #{suffix} masked"
+          end
           return 0
         end
 
