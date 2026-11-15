@@ -132,6 +132,26 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_linear_personal_api_keys_masked
+    token = "lin_api_#{'Ab12' * 10}"
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["credential [secret] saved", 1], mask("credential #{token} saved")
+    assert_equal ["[secret]-", 1], mask("#{token}-")
+  end
+
+  def test_linear_personal_api_key_near_misses_kept
+    token = "lin_api_#{'Ab12' * 10}"
+    ["lin_api_#{'A' * 39}", "lin_api_#{'A' * 41}",
+     "lin_oauth_#{'A' * 40}", "lin_api_#{'A' * 39}_",
+     "not#{token}", "prefix_#{token}", "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_linear_personal_api_key_long_input_stays_linear
+    assert_operator elapsed { mask('lin_api_' + 'A' * 150_000) }, :<, 2.0
+  end
+
   def test_digitalocean_token_near_misses_kept
     token = "dop_v1_#{'a1b2c3d4' * 8}"
     ["dop_v1_#{'a' * 63}", "doo_v1_#{'b' * 65}",
