@@ -157,6 +157,20 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_notion_integration_tokens_masked
+    token = "ntn_#{'Ab3_' * 8}"
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["notion [secret] saved", 1], mask("notion #{token} saved")
+  end
+
+  def test_notion_integration_token_near_misses_kept
+    token = "ntn_#{'Ab3_' * 8}"
+    ["ntn_#{'a' * 19}", "not#{token}", "prefix_#{token}",
+     "ntn_example", "ntn-#{'A' * 32}"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_sendgrid_api_keys_masked
     token = "SG.#{'Ab1_' * 5}Q-." + "#{'Cd4-' * 10}x_7"
     assert_equal ["[secret]", 1], mask(token)
@@ -221,6 +235,7 @@ class SecretsTest < Minitest::Test
   # Guards against quadratic matching; bounds are loose to avoid flakiness.
   def test_long_single_line_inputs_stay_linear
     ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} ",
+     "ntn_#{'A' * 100_000}_suffix",
      "hf_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
      "shpat_#{'a' * 100_000}_suffix"].each do |unit|
