@@ -439,9 +439,19 @@ class CLICopyTest < Minitest::Test
 
   def test_print_masks_secrets
     add("echo $T", "ghp_#{'a' * 36}\r\n")
-    assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", ""], run_cli("-p")
+    assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", "oops: 1 secret masked\n"], run_cli("-p")
   end
 
+  def test_print_reports_multiple_masked_secrets_to_stderr
+    add("echo ghp_#{'a' * 36}", "ghp_#{'b' * 36}\r\n")
+    assert_equal [0, "```\n$ echo [secret]\n[secret]\n```\n", "oops: 2 secrets masked\n"], run_cli("-p")
+  end
+
+  def test_print_with_show_secrets_has_no_masking_warning
+    add("echo $T", "ghp_#{'a' * 36}\r\n")
+    assert_equal [0, "```\n$ echo $T\nghp_#{'a' * 36}\n```\n", ""],
+                 run_cli("--print", "--show-secrets")
+  end
   def test_json_writes_records_to_stdout_without_touching_clipboard
     add("c1", "one\r\n")
     add("oops", "copied\r\n")
