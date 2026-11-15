@@ -65,9 +65,9 @@ class FormatterTest < Minitest::Test
     assert text.end_with?("]\n")
     assert_equal [{ "command" => "export TOKEN=[secret]", "cwd" => "~/app", "exit" => 1,
                     "started_at" => iso(1_761_912_185), "ended_at" => iso(1_761_912_190),
-                    "output" => "~/app [secret]" },
+                    "output" => "~/app [secret]", "secrets_masked" => 2 },
                   { "command" => "true", "cwd" => "/", "exit" => 0, "started_at" => nil, "ended_at" => nil,
-                    "output" => "" }],
+                    "output" => "", "secrets_masked" => 0 }],
                  JSON.parse(text)
   end
 
@@ -76,6 +76,7 @@ class FormatterTest < Minitest::Test
     item = JSON.parse(fmt.json([r])).first
     assert_equal "cat <<EOF\nhi\nEOF", item["command"]
     assert_equal "one\n  two", item["output"]
+    assert_equal 0, item["secrets_masked"]
   end
 
   def test_json_with_show_secrets_keeps_the_raw_text
@@ -84,6 +85,18 @@ class FormatterTest < Minitest::Test
     item = JSON.parse(fmt(show_secrets: true).json([r])).first
     assert_equal ["cd /Users/takeuchi", "/Users/takeuchi", "ghp_#{'a' * 36}"],
                  item.values_at("command", "cwd", "output")
+    assert_equal 0, item["secrets_masked"]
+  end
+
+  def test_json_counts_only_secrets_in_the_command_and_output_per_record
+    a = rec(cmd: "echo ghp_#{'a' * 36}", out: "ghp_#{'b' * 36}\n")
+    a.cwd = "ghp_#{'c' * 36}"
+    b = rec(cmd: "pwd", out: "")
+    b.cwd = "ghp_#{'d' * 36}"
+
+    items = JSON.parse(fmt.json([a, b]))
+    assert_equal [2, 0], items.map { |item| item["secrets_masked"] }
+    assert_equal ["[secret]", "[secret]"], items.map { |item| item["cwd"] }
   end
 
   def test_multiple_records_in_one_fence
