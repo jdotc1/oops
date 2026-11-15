@@ -73,12 +73,22 @@ module Oops
     end
 
     def json_item(record)
-      { command: clean(record.cmd.to_s).sub(/\s+\z/, ""),
-        cwd: record.cwd && clean(record.cwd.to_s),
+      before_command = @masked
+      command = clean(record.cmd.to_s).sub(/\s+\z/, "")
+      command_masked = @masked - before_command
+      cwd = record.cwd && clean(record.cwd.to_s)
+      before_output = @masked
+      output = output_lines(clean(PromptSp.strip(record.output.to_s))).join("\n")
+      # The JSON field counts only the command and output, not the directory.
+      masked = command_masked + @masked - before_output
+
+      { command: command,
+        cwd: cwd,
         exit: record.exit,
         started_at: iso_time(record.started_at),
         ended_at: iso_time(record.ended_at),
-        output: output_lines(clean(PromptSp.strip(record.output.to_s))).join("\n") }
+        output: output,
+        secrets_masked: masked }
     end
 
     def iso_time(seconds)
