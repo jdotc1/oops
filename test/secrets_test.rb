@@ -156,6 +156,23 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_linear_api_and_oauth_tokens_masked
+    %w[api oauth].each do |kind|
+      token = "lin_#{kind}_#{'Ab12' * (kind == "api" ? 10 : 12)}" # Synthetic; no real credentials.
+      assert_equal ["[secret]", 1], mask(token)
+      assert_equal ["linear [secret] used", 1], mask("linear #{token} used")
+    end
+  end
+
+  def test_linear_token_near_misses_kept
+    token = "lin_api_#{'Ab12' * 10}"
+    ["lin_api_#{'A' * 39}", "lin_api_#{'A' * 41}", "lin_oauth_#{'A' * 19}",
+     "lin_other_#{'A' * 48}", "not#{token}",
+     "prefix_#{token}", "#{token}_suffix", "lin-cli"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_short_or_embedded_prefixes_are_not_tokens
     %w[sk-1 task-list-item-name-that-is-long-enough npm_run
        ask-me-anything-about-this-long-thing].each do |text|
@@ -206,6 +223,7 @@ class SecretsTest < Minitest::Test
   def test_long_single_line_inputs_stay_linear
     ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} ",
      "hf_#{'A' * 100_000}",
+     "lin_api_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
