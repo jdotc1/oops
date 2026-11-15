@@ -244,7 +244,8 @@ class SecretsTest < Minitest::Test
     ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} ",
      "hf_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
-     "shpat_#{'a' * 100_000}_suffix"].each do |unit|
+     "shpat_#{'a' * 100_000}_suffix",
+     "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
       assert_operator elapsed { mask(small) }, :<, 2.0
