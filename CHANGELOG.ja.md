@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- 追加: `oops --json` の各レコードに `secrets_masked` を追加し、コマンドと出力でマスクした秘密情報の件数を分かるようにしました。`--show-secrets` では `0` です（[#91](https://github.com/ysb3996-blip/oops/issues/91)）。
 - 追加: `oops grep TEXT` で、コマンドか出力に `TEXT` を含む直近のコマンドをコピーできるようにしました（文字はそのまま比べ、大文字小文字と出力の色は無視）。`oops pick` の 10 件より前のコマンドも探せます。`-n N` で一致した直近 N 件、`--pick` で一致したものを並べて選べ、ほかのオプションは `oops N` と同じように使えます（[#112](https://github.com/ysb3996-blip/oops/issues/112)）。
 - 修正: Shopify のアクセストークン（`shpat_`、`shpca_`、`shppa_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: Hugging Face の `hf_` アクセストークンを、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
