@@ -439,7 +439,12 @@ class CLICopyTest < Minitest::Test
 
   def test_print_masks_secrets
     add("echo $T", "ghp_#{'a' * 36}\r\n")
-    assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", ""], run_cli("-p")
+    assert_equal [0, "```\n$ echo $T\n[secret]\n```\n", "oops: 1 secret masked\n"], run_cli("-p")
+  end
+
+  def test_print_reports_multiple_secrets_without_polluting_stdout
+    add("echo both", "ghp_#{'a' * 36} npm_#{'b' * 36}\r\n")
+    assert_equal [0, "```\n$ echo both\n[secret] [secret]\n```\n", "oops: 2 secrets masked\n"], run_cli("--print")
   end
 
   def test_json_writes_records_to_stdout_without_touching_clipboard

@@ -2,6 +2,10 @@
 
 English | [日本語](CHANGELOG.ja.md)
 
+## Unreleased
+
+- Fixed: `oops --print` reports how many secrets were masked on stderr without changing its piped stdout ([#61](https://github.com/ysb3996-blip/oops/issues/61)).
+
 ## 0.8.0 - 2026-11-15
 
 - Added: `oops grep TEXT` copies the last command whose command line or output contains `TEXT` (fixed text, case-insensitive, colors ignored), so a command older than `oops pick`'s 10 can be found. `-n N` copies the last N matches, `--pick` lists the matches to choose from, and the other options work as with `oops N` ([#112](https://github.com/ysb3996-blip/oops/issues/112)).
