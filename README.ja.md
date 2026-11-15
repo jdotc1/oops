@@ -207,7 +207,7 @@ $ bundle exec rspec
 
 ### `--json`
 
-`oops --json` は、選んだコマンドを Markdown のブロックとしてコピーする代わりに、古い順の JSON 配列として標準出力へ書き出します。`N`・`err`・`-n`・`--show-secrets` と併用できます。`--github`・`--time`・`--output-only` は Markdown の形を変えるオプションなので、併用すると使い方の誤りになります。コマンド・ディレクトリ・出力は、クリップボードと同じように整えてマスクします。`output` の末尾に改行は付かず、`exit` は終了コード（成功なら `0`）、時刻はローカル時刻の ISO 8601 です（分からないときは `null`）。
+`oops --json` は、選んだコマンドを Markdown のブロックとしてコピーする代わりに、古い順の JSON 配列として標準出力へ書き出します。`N`・`err`・`-n`・`--show-secrets` と併用できます。`--github`・`--time`・`--output-only` は Markdown の形を変えるオプションなので、併用すると使い方の誤りになります。コマンド・ディレクトリ・出力は、クリップボードと同じように整えてマスクします。`secrets_masked` は各コマンドと出力でマスクした秘密情報の件数です（ディレクトリは含みません）。`--show-secrets` では常に `0` です。`output` の末尾に改行は付かず、`exit` は終了コード（成功なら `0`）、時刻はローカル時刻の ISO 8601 です（分からないときは `null`）。
 
 ```json
 [
@@ -217,7 +217,8 @@ $ bundle exec rspec
     "exit": 1,
     "started_at": "2026-11-07T10:19:05+09:00",
     "ended_at": "2026-11-07T10:19:05+09:00",
-    "output": "ls: /nothing-here: No such file or directory"
+    "output": "ls: /nothing-here: No such file or directory",
+    "secrets_masked": 0
   }
 ]
 ```
