@@ -452,9 +452,9 @@ class CLICopyTest < Minitest::Test
       status, out, err = run_cli("--json", "-n", "2")
       assert_equal [0, ""], [status, err]
       assert_equal [{ "command" => "c1", "cwd" => "~", "exit" => 0, "started_at" => stamp, "ended_at" => ended,
-                      "output" => "one" },
+                      "output" => "one", "secrets_masked" => 0 },
                     { "command" => "c2", "cwd" => "~", "exit" => 3, "started_at" => stamp, "ended_at" => ended,
-                      "output" => "[secret]" }],
+                      "output" => "[secret]", "secrets_masked" => 1 }],
                    JSON.parse(out)
       assert_equal out, run_cli("2", "--json", "-p")[1]
       refute File.exist?(@clip)
@@ -466,6 +466,7 @@ class CLICopyTest < Minitest::Test
     add("good", "ok\r\n")
     items = JSON.parse(run_cli("err", "--json", "--show-secrets")[1])
     assert_equal([["bad", 1, "ghp_#{'a' * 36}"]], items.map { |i| i.values_at("command", "exit", "output") })
+    assert_equal [0], items.map { |i| i["secrets_masked"] }
     File.write(@session, "")
     assert_equal [1, "", "oops: no command found yet.\n"], run_cli("--json")
   end
