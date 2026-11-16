@@ -2,6 +2,10 @@
 
 [English](CHANGELOG.md) | 日本語
 
+## Unreleased
+
+- 修正: Linear の個人用 API キー（`lin_api_`）を、コピーするコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
+
 ## 0.8.0 - 2026-11-15
 
 - 追加: `oops grep TEXT` で、コマンドか出力に `TEXT` を含む直近のコマンドをコピーできるようにしました（文字はそのまま比べ、大文字小文字と出力の色は無視）。`oops pick` の 10 件より前のコマンドも探せます。`-n N` で一致した直近 N 件、`--pick` で一致したものを並べて選べ、ほかのオプションは `oops N` と同じように使えます（[#112](https://github.com/ysb3996-blip/oops/issues/112)）。
