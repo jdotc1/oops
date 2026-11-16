@@ -19,6 +19,7 @@ module Oops
       /\bglpat-[A-Za-z0-9_-]{20,}/,                                     # GitLab tokens
       /(?<![A-Za-z0-9_])hf_[A-Za-z0-9]{16,}(?![A-Za-z0-9_])/, # Hugging Face access tokens
       /(?<![A-Za-z0-9_])lin_api_[A-Za-z0-9]{40}(?![A-Za-z0-9_])/, # Linear personal API keys
+      /(?<![A-Za-z0-9_-])ntn_[0-9]{11}[A-Za-z0-9]{35}(?![A-Za-z0-9_-])/, # Notion integration tokens
       /(?<![A-Za-z0-9_])(?:dop|doo|dor)_v1_[0-9a-f]{64}(?![A-Za-z0-9_])/, # DigitalOcean API tokens
       /(?<![A-Za-z0-9_])(?:shpat|shpca|shppa)_[A-Za-z0-9]{32,}(?![A-Za-z0-9_])/, # Shopify access tokens
       %r{

@@ -138,6 +138,21 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_notion_integration_tokens_masked
+    token = "ntn_12345678901#{'Ab3' * 11}Cd"
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["Notion [secret] ready", 1], mask("Notion #{token} ready")
+  end
+
+  def test_notion_integration_token_near_misses_kept
+    token = "ntn_12345678901#{'Ab3' * 11}Cd"
+    ["ntn_#{'A' * 46}", "ntn_#{'1' * 11}#{'A' * 34}",
+     "ntn_#{'1' * 11}#{'A' * 36}", "ntn_#{'1' * 10}#{'A' * 36}",
+     "not#{token}", "_#{token}", "#{token}_suffix", "#{token}X"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_digitalocean_api_tokens_masked
     %w[dop doo dor].each do |kind|
       token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
@@ -260,7 +275,8 @@ class SecretsTest < Minitest::Test
      "lin_api_#{'A' * 100_000}_suffix",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
      "shpat_#{'a' * 100_000}_suffix",
-     "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}"].each do |unit|
+     "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}",
+     "ntn_#{'1' * 11}#{'A' * 100_000}_suffix"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
       assert_operator elapsed { mask(small) }, :<, 2.0
