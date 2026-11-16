@@ -26,8 +26,14 @@ module Oops
       }x, # Sentry org auth tokens
       /\bAIza[0-9A-Za-z_-]{35}/, # Google API keys
       /(?<![A-Za-z0-9_-])SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, # SendGrid API keys
-      /\bnpm_[A-Za-z0-9]{36}/,                                          # npm tokens
-      %r{hooks\.slack\.com/services/(?<secret>[A-Za-z0-9/]+)},          # Slack webhook URLs
+      /\bnpm_[A-Za-z0-9]{36}/, # npm tokens
+      # The webhook ID and path token together grant permission to post; keep
+      # the official origin and route visible while masking both credentials.
+      %r{
+        (?<![A-Za-z0-9._-])https://(?:discord\.com|discordapp\.com)/api(?:/v\d{1,2})?/webhooks/
+        (?<secret>\d{17,20}/[A-Za-z0-9_-]{50,128})(?![A-Za-z0-9_-])
+      }ix,
+      %r{hooks\.slack\.com/services/(?<secret>[A-Za-z0-9/]+)}, # Slack webhook URLs
       /\beyJ[\w-]+\.[\w-]+\.[\w-]+/, # JWT
       %r{Authorization:[ \t]*(?:Bearer|Basic|token)[ \t]+(?<secret>[\w.~+/=-]+)}i,
       # Without an END line (cut off by head, a failed command or the capture

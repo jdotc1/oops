@@ -205,6 +205,32 @@ class SecretsTest < Minitest::Test
     assert_equal ["https://hooks.slack.com/services/[secret]", 1], mask(url)
   end
 
+  def test_discord_webhook_credentials_masked
+    id = "123456789012345678"
+    secret = "Ab3_" * 13
+    %w[discord.com discordapp.com].each do |host|
+      %w[api api/v10].each do |path|
+        url = "https://#{host}/#{path}/webhooks/#{id}/#{secret}"
+        expected = "https://#{host}/#{path}/webhooks/[secret]"
+        assert_equal [expected, 1], mask(url)
+        assert_equal ["POST #{expected}?wait=true", 1], mask("POST #{url}?wait=true")
+      end
+    end
+  end
+
+  def test_discord_webhook_near_misses_kept
+    id = "123456789012345678"
+    secret = "Ab3_" * 13
+    ["https://discord.com.evil.test/api/webhooks/#{id}/#{secret}",
+     "https://mydiscord.com/api/webhooks/#{id}/#{secret}",
+     "http://discord.com/api/webhooks/#{id}/#{secret}",
+     "https://discord.com/api/webhooks/#{'1' * 16}/#{secret}",
+     "https://discord.com/api/webhooks/#{id}/#{'A' * 49}",
+     "https://discord.com/api/webhooks/#{id}/#{'A' * 129}"].each do |input|
+      assert_equal [input, 0], mask(input)
+    end
+  end
+
   def test_authorization_token_scheme
     assert_equal ["Authorization: token [secret]", 1], mask("Authorization: token ghx123abc")
   end
@@ -245,7 +271,8 @@ class SecretsTest < Minitest::Test
      "hf_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
      "shpat_#{'a' * 100_000}_suffix",
-     "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}"].each do |unit|
+     "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}",
+     "https://discord.com/api/webhooks/#{'1' * 18}/#{'A' * 100_000}"].each do |unit|
       small = unit * (500_000 / unit.size)
       big = unit * (2_000_000 / unit.size)
       assert_operator elapsed { mask(small) }, :<, 2.0
