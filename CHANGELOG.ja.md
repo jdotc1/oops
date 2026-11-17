@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- 修正: 従来の Notion インテグレーショントークン（`secret_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: Notion のインテグレーショントークン（`ntn_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: Linear の個人用 API キー（`lin_api_`）を、コピーするコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: `oops` と `oops --gist` が表示する報告の行で、件数が 1 のときに "1 lines"・"1 secrets masked" と複数形になっていたのを "1 line"・"1 secret masked" に直しました（[#86](https://github.com/ysb3996-blip/oops/issues/86)）。
