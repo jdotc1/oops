@@ -225,9 +225,11 @@ module Oops
       end
 
       def report_counts(result)
-        counts = "#{result.lines} lines"
-        result.masked_count.positive? ? "#{counts}, #{result.masked_count} secrets masked" : counts
+        counts = count_noun(result.lines, "line")
+        result.masked_count.positive? ? "#{counts}, #{count_noun(result.masked_count, 'secret')} masked" : counts
       end
+
+      def count_noun(count, noun) = "#{count} #{noun}#{'s' unless count == 1}"
 
       # The session log of the recorder this shell runs under. Raises Failure
       # when there is none.

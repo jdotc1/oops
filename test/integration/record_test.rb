@@ -72,7 +72,7 @@ class RecordIntegrationTest < Minitest::Test
     type("echo hello; false\n")
     type("echo world\n")
     type("#{EXE}\n")
-    wait_for(/copied: \$ echo world \(1 lines\)/)
+    wait_for(/copied: \$ echo world \(1 line\)/)
     assert_equal "```\n$ echo world\nworld\n```\n", File.read("#{@home}/clip")
     type("#{EXE} err\n")
     wait_for(/copied: \$ echo hello; false/)
@@ -112,7 +112,7 @@ class RecordIntegrationTest < Minitest::Test
     type(%(eval "$(#{EXE} init zsh)"\n))
     type("printf foo\n")
     type("#{EXE}\n")
-    wait_for(/copied: \$ printf foo \(1 lines\)/)
+    wait_for(/copied: \$ printf foo \(1 line\)/)
     assert_equal "```\n$ printf foo\nfoo\n```\n", File.read("#{@home}/clip")
   end
 

@@ -147,13 +147,13 @@ class CLICopyTest < Minitest::Test
   def test_copies_last_and_reports
     add("c1", "one\r\n")
     add("c2", "two\r\n")
-    assert_equal [0, "copied: $ c2 (1 lines)\n", ""], run_cli
+    assert_equal [0, "copied: $ c2 (1 line)\n", ""], run_cli
     assert_equal "```\n$ c2\ntwo\n```\n", clip
   end
 
   def test_skips_oops_itself_and_unfinished_records
     add("make", "built\r\n")
-    add("oops", "copied: $ make (1 lines)\r\n")
+    add("oops", "copied: $ make (1 line)\r\n")
     add("sleep 9", "", exit: nil)
     assert_equal 0, run_cli.first
     assert_equal "```\n$ make\nbuilt\n```\n", clip
@@ -164,7 +164,7 @@ class CLICopyTest < Minitest::Test
     add("good", "fine\r\n")
     assert_equal [0, "copied: $ bad (2 lines)\n", ""], run_cli("2")
     assert_equal "```\n$ bad\nboom\n(exit 2)\n\n$ good\nfine\n```\n", clip
-    assert_equal [0, "copied: $ bad (1 lines)\n", ""], run_cli("err")
+    assert_equal [0, "copied: $ bad (1 line)\n", ""], run_cli("err")
     assert_equal "```\n$ bad\nboom\n(exit 2)\n```\n", clip
     assert_equal 0, run_cli("--github").first
     assert_equal "```console\n$ good\nfine\n```\n", clip
@@ -212,8 +212,8 @@ class CLICopyTest < Minitest::Test
     add("make test", "boom\r\n", exit: 2)
     add("bundle exec rspec", "\e[31mNoMethodError\e[0m: undefined\r\n", exit: 1)
     add("ls", "a\r\n")
-    assert_equal [0, "copied: $ bundle exec rspec (1 lines)\n", ""], run_cli("grep", "nomethoderror")
-    assert_equal [0, "copied: $ make test (1 lines)\n", ""], run_cli("grep", "MAKE")
+    assert_equal [0, "copied: $ bundle exec rspec (1 line)\n", ""], run_cli("grep", "nomethoderror")
+    assert_equal [0, "copied: $ make test (1 line)\n", ""], run_cli("grep", "MAKE")
     assert_equal "```\n$ make test\nboom\n(exit 2)\n```\n", clip
   end
 
@@ -233,7 +233,7 @@ class CLICopyTest < Minitest::Test
     add("make lint", "ok\r\n")
     status, out, err = run_cli("grep", "make", "--pick", stdin: StringIO.new("1\n"))
     assert_equal 0, status
-    assert_equal "copied: $ make (1 lines)\n", out
+    assert_equal "copied: $ make (1 line)\n", out
     assert_match(/\A1  \$ make       .*\n2  \$ make lint  .*\npick> \n\z/, err)
   end
 
@@ -249,7 +249,7 @@ class CLICopyTest < Minitest::Test
 
   def test_n_larger_than_history_copies_what_there_is
     add("only", "x\r\n")
-    assert_equal [0, "copied: $ only (1 lines)\n", ""], run_cli("5")
+    assert_equal [0, "copied: $ only (1 line)\n", ""], run_cli("5")
   end
 
   def test_short_count_option_matches_positional_count
@@ -286,7 +286,7 @@ class CLICopyTest < Minitest::Test
   def test_short_count_option_copies_available_history_and_preserves_empty_and_paused_errors
     assert_equal [1, "", "oops: no command found yet.\n"], run_cli("-n", "5")
     add("only", "x\r\n")
-    assert_equal [0, "copied: $ only (1 lines)\n", ""], run_cli("-n", "5")
+    assert_equal [0, "copied: $ only (1 line)\n", ""], run_cli("-n", "5")
     @log.pause!
     assert_equal [1, "", "oops: recording is paused. Run  oops resume  first.\n"], run_cli("-n", "5")
   end
@@ -346,7 +346,7 @@ class CLICopyTest < Minitest::Test
 
   def test_show_secrets_option
     add("echo t", "ghp_#{'a' * 36}\r\n")
-    assert_equal [0, "copied: $ echo t (1 lines)\n", ""], run_cli("--show-secrets")
+    assert_equal [0, "copied: $ echo t (1 line)\n", ""], run_cli("--show-secrets")
     assert_equal "```\n$ echo t\nghp_#{'a' * 36}\n```\n", clip
   end
 
@@ -372,14 +372,19 @@ class CLICopyTest < Minitest::Test
 
   def test_secrets_count_in_report
     add("echo $T", "ghp_#{'a' * 36}\r\n")
-    assert_equal [0, "copied: $ echo $T (1 lines, 1 secrets masked)\n", ""], run_cli
+    assert_equal [0, "copied: $ echo $T (1 line, 1 secret masked)\n", ""], run_cli
     assert_equal "```\n$ echo $T\n[secret]\n```\n", clip
+  end
+
+  def test_report_uses_plural_for_counts_above_one
+    add("echo $T", "ghp_#{'a' * 36}\r\nghp_#{'b' * 36}\r\n")
+    assert_equal [0, "copied: $ echo $T (2 lines, 2 secrets masked)\n", ""], run_cli
   end
 
   def test_report_masks_and_replaces_the_command
     write_config("clipboard: \"cat > #{@clip}\"\nreplace:\n  acme: example\n")
     add("curl https://u:pw@acme.test", "ok\r\n")
-    assert_equal [0, "copied: $ curl https://[secret]@example.test (1 lines, 1 secrets masked)\n", ""], run_cli
+    assert_equal [0, "copied: $ curl https://[secret]@example.test (1 line, 1 secret masked)\n", ""], run_cli
   end
 
   def test_report_shows_only_the_first_line_of_a_multiline_command
@@ -393,7 +398,7 @@ class CLICopyTest < Minitest::Test
     add("c1", "one\r\n")
     status, out, err = run_cli
     assert_equal 0, status
-    assert_equal "copied: $ c1 (1 lines)\n", out
+    assert_equal "copied: $ c1 (1 line)\n", out
     assert_equal "oops: warning: unknown key: bogus\noops: warning: secrets must be a list; ignored\n", err
   end
 
@@ -500,7 +505,7 @@ class CLICopyTest < Minitest::Test
   def test_gist_uploads_the_text_and_copies_the_url
     add("echo $T", "ghp_#{'a' * 36}\r\nmore\r\n", exit: 1)
     env = fake_gh
-    assert_equal [0, "gist: https://gist.github.com/someone/abc123 (2 lines, 1 secrets masked)\n", ""],
+    assert_equal [0, "gist: https://gist.github.com/someone/abc123 (2 lines, 1 secret masked)\n", ""],
                  run_cli("--gist", env: env)
     assert_equal %w[gist create - --filename oops.md --desc] << "oops: $ echo $T", gh_argv
     assert_equal "```\n$ echo $T\n[secret]\nmore\n(exit 1)\n```\n", gh_stdin
@@ -556,7 +561,7 @@ class CLICopyTest < Minitest::Test
     env = fake_gh
     with_detect(->(*, **) {}) do
       status, out, err = run_cli("--gist", env: env)
-      assert_equal [0, "gist: https://gist.github.com/someone/abc123 (1 lines)\n"], [status, out]
+      assert_equal [0, "gist: https://gist.github.com/someone/abc123 (1 line)\n"], [status, out]
       assert_match(/\Aoops: warning: the URL was not copied: no clipboard tool found/, err)
     end
   end
@@ -654,9 +659,9 @@ class CLICopyTest < Minitest::Test
   def test_time_and_output_only_options
     add("bundle exec rspec", "....F\n", exit: 1)
     stamp = Time.at(1).strftime("%Y-%m-%d %H:%M:%S %:z")
-    assert_equal [0, "copied: $ bundle exec rspec (1 lines)\n", ""], run_cli("--time")
+    assert_equal [0, "copied: $ bundle exec rspec (1 line)\n", ""], run_cli("--time")
     assert_equal "```\n# #{stamp}\n$ bundle exec rspec\n....F\n(exit 1)\n```\n", clip
-    assert_equal [0, "copied: $ bundle exec rspec (1 lines)\n", ""], run_cli("--output-only")
+    assert_equal [0, "copied: $ bundle exec rspec (1 line)\n", ""], run_cli("--output-only")
     assert_equal "```\n....F\n(exit 1)\n```\n", clip
   end
 

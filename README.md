@@ -228,7 +228,7 @@ A long output is awkward to paste into a chat or an issue. `oops --gist` uploads
 
 ```console
 $ oops err --gist
-gist: https://gist.github.com/you/4f1e8c0b2d9a7e6f5c3b1a0d9e8f7c6b (1 lines)
+gist: https://gist.github.com/you/4f1e8c0b2d9a7e6f5c3b1a0d9e8f7c6b (1 line)
 ```
 
 oops does not talk to GitHub itself: it runs `gh gist create` from the [GitHub CLI](https://cli.github.com), so you need `gh` installed and logged in once with `gh auth login`. The gist holds one file, `oops.md`, and its description is the first command line. It works with `N`, `err`, `-n`, `--github`, `--time` and `--output-only`.

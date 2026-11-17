@@ -228,7 +228,7 @@ $ bundle exec rspec
 
 ```console
 $ oops err --gist
-gist: https://gist.github.com/you/4f1e8c0b2d9a7e6f5c3b1a0d9e8f7c6b (1 lines)
+gist: https://gist.github.com/you/4f1e8c0b2d9a7e6f5c3b1a0d9e8f7c6b (1 line)
 ```
 
 oops 自身は GitHub とやり取りしません。[GitHub CLI](https://cli.github.com) の `gh gist create` を呼ぶので、`gh` を入れて、一度 `gh auth login` でログインしておく必要があります。gist の中身は `oops.md` という1ファイルで、説明欄には1つ目のコマンドの行が入ります。`N`・`err`・`-n`・`--github`・`--time`・`--output-only` と併用できます。
