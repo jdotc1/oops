@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- 修正: Notion のインテグレーショントークン（`ntn_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 - 修正: Linear の個人用 API キー（`lin_api_`）を、コピーするコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。
 
 ## 0.8.0 - 2026-11-15

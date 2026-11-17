@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- Fixed: Notion integration tokens (`ntn_`) are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
 - Fixed: Linear personal API keys (`lin_api_`) are masked in copied commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)).
 
 ## 0.8.0 - 2026-11-15
