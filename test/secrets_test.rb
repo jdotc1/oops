@@ -116,6 +116,22 @@ class SecretsTest < Minitest::Test
     assert_equal ["model [secret] loaded", 1], mask("model #{token} loaded")
   end
 
+  def test_supabase_secret_keys_masked_but_publishable_keys_kept
+    token = "sb_" + "secret_" + ("Ab3_" * 8) # Synthetic, never an issued key.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["Supabase [secret] ready", 1], mask("Supabase #{token} ready")
+    assert_equal ["[secret]", 1], mask("sb_\"secret_#{'Ab3_' * 8}\"")
+
+    public_key = "sb_publishable_" + ("Ab3_" * 8)
+    for ordinary in [
+      public_key, "Supabase supports sb_secret_ keys", "sb_secret_#{'A' * 23}",
+      "sb_secret_#{'A' * 129}", "prefix_#{token}", "#{token}_suffix",
+      "sb_secret_#{'A' * 150_000}"
+    ]
+      assert_equal [ordinary, 0], mask(ordinary), ordinary[0, 90]
+    end
+  end
+
   def test_hugging_face_token_near_misses_kept
     token = "hf_#{'Ab12' * 6}"
     ["hf_#{'A' * 15}", "not#{token}", "prefix_#{token}",
