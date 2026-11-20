@@ -172,6 +172,22 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_pypi_api_tokens_masked
+    token = "pypi-#{'Ab3_' * 22}" # Synthetic Macaroon-like payload (88 chars).
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["publish [secret] now", 1], mask("publish #{token} now")
+    assert_equal ["echo [secret]", 1], mask(%(echo pypi-"#{'Ab3_' * 22}"))
+  end
+
+  def test_pypi_api_token_near_misses_kept
+    token = "pypi-#{'Ab3_' * 22}"
+    ["pypi-", "pypi-#{'a' * 84}", "pypi_#{'a' * 90}",
+     "prefix_#{token}", "not#{token}", "pypi-#{'a' * 84}.",
+     "pypi-#{'a' * 100_000}_suffix".sub("pypi-", "pypi_")].each do |text|
+      assert_equal [text, 0], mask(text), text[0, 80]
+    end
+  end
+
   def test_digitalocean_api_tokens_masked
     %w[dop doo dor].each do |kind|
       token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
