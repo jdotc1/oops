@@ -4,6 +4,7 @@
 
 ## 未リリース
 
+- 修正: Supabase のサーバー専用 API キー（`sb_secret_`）を、記録されたコマンドと出力でマスクするようにしました。公開用キー（`sb_publishable_`）はマスクしません（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。[@jdotc1](https://github.com/jdotc1) さんによる貢献（[#125](https://github.com/ysb3996-blip/oops/pull/125)）。
 - 修正: `ghp_"..."` のようにシェルの引用符やバックスラッシュで途中が区切られたトークンを、記録されたコマンド行でもマスクするようにしました。その語全体が `[secret]` になります（[#123](https://github.com/ysb3996-blip/oops/issues/123)）。
 - 修正: Notion のインテグレーショントークン（`ntn_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。[@jdotc1](https://github.com/jdotc1) さんによる貢献（[#117](https://github.com/ysb3996-blip/oops/pull/117)）。
 - 修正: Linear の個人用 API キー（`lin_api_`）を、記録されたコマンドと出力でマスクするようにしました（[#15](https://github.com/ysb3996-blip/oops/issues/15)）。[@jdotc1](https://github.com/jdotc1) さんによる貢献（[#118](https://github.com/ysb3996-blip/oops/pull/118)）。
