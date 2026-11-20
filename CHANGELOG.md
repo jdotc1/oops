@@ -4,6 +4,7 @@ English | [日本語](CHANGELOG.ja.md)
 
 ## Unreleased
 
+- Fixed: Supabase server-only API keys (`sb_secret_`) are masked in captured commands and output, while publishable keys (`sb_publishable_`) stay visible ([#15](https://github.com/ysb3996-blip/oops/issues/15)). Contributed by [@jdotc1](https://github.com/jdotc1) in [#125](https://github.com/ysb3996-blip/oops/pull/125).
 - Fixed: a token split by shell quotes or a backslash, such as `ghp_"..."`, is masked in the captured command line; the whole word becomes `[secret]` ([#123](https://github.com/ysb3996-blip/oops/issues/123)).
 - Fixed: Notion integration tokens (`ntn_`) are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)). Contributed by [@jdotc1](https://github.com/jdotc1) in [#117](https://github.com/ysb3996-blip/oops/pull/117).
 - Fixed: Linear personal API keys (`lin_api_`) are masked in captured commands and output ([#15](https://github.com/ysb3996-blip/oops/issues/15)). Contributed by [@jdotc1](https://github.com/jdotc1) in [#118](https://github.com/ysb3996-blip/oops/pull/118).
