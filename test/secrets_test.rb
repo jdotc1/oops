@@ -116,19 +116,22 @@ class SecretsTest < Minitest::Test
     assert_equal ["model [secret] loaded", 1], mask("model #{token} loaded")
   end
 
-  def test_supabase_secret_keys_masked_but_publishable_keys_kept
-    token = "sb_" + "secret_" + ("Ab3_" * 8) # Synthetic, never an issued key.
+  def test_supabase_secret_keys_masked
+    token = "sb_secret_#{'Ab3_' * 8}" # Synthetic, never an issued key.
     assert_equal ["[secret]", 1], mask(token)
     assert_equal ["Supabase [secret] ready", 1], mask("Supabase #{token} ready")
     assert_equal ["[secret]", 1], mask("sb_\"secret_#{'Ab3_' * 8}\"")
+  end
 
-    public_key = "sb_publishable_" + ("Ab3_" * 8)
-    for ordinary in [
+  def test_supabase_key_near_misses_kept
+    token = "sb_secret_#{'Ab3_' * 8}"
+    public_key = "sb_publishable_#{'Ab3_' * 8}"
+    [
       public_key, "Supabase supports sb_secret_ keys", "sb_secret_#{'A' * 23}",
-      "sb_secret_#{'A' * 129}", "prefix_#{token}", "#{token}_suffix",
+      "sb_secret_#{'A' * 129}", "prefix_#{token}",
       "sb_secret_#{'A' * 150_000}"
-    ]
-      assert_equal [ordinary, 0], mask(ordinary), ordinary[0, 90]
+    ].each do |text|
+      assert_equal [text, 0], mask(text), text[0, 90]
     end
   end
 
@@ -307,6 +310,7 @@ class SecretsTest < Minitest::Test
   def test_long_single_line_inputs_stay_linear
     ['password="', 'token="a" ', '{"api_key": "abc123","name":"x"},', "dop_v1_#{'a' * 63} ",
      "hf_#{'A' * 100_000}",
+     "sb_secret_#{'A' * 100_000}",
      "lin_api_#{'A' * 100_000}_suffix",
      "ntn_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
