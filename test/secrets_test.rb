@@ -241,6 +241,22 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_pypi_api_tokens_masked
+    token = "pypi-" + "Ab3x" * 22 # Synthetic token, assembled at runtime.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["publish [secret] done", 1], mask("publish #{token} done")
+    assert_equal ["echo [secret]", 1], mask(%(echo pypi-"#{"Ab3x" * 22}"))
+  end
+
+  def test_pypi_near_misses_are_not_masked
+    token = "pypi-" + "Ab3x" * 22
+    ["pypi- token prefix", "pypi-" + "A" * 84,
+     "not" + token, "prefix_" + token, token + "_suffix",
+     "pypi-" + "a" * 100_000 + "_suffix"].each do |text|
+      assert_equal [text, 0], mask(text), text[0, 80]
+    end
+  end
+
   def test_short_or_embedded_prefixes_are_not_tokens
     %w[sk-1 task-list-item-name-that-is-long-enough npm_run
        ask-me-anything-about-this-long-thing].each do |text|
