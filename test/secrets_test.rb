@@ -153,6 +153,28 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_legacy_notion_integration_tokens_masked
+    token = "secret_#{'Ab12' * 10}ABC" # Synthetic legacy Notion token; 43 alphanumeric characters.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["notion [secret] received", 1], mask("notion #{token} received")
+    assert_equal ["[secret]-backup", 1], mask("#{token}-backup")
+  end
+
+  def test_legacy_notion_token_near_misses_kept
+    token = "secret_#{'Ab12' * 10}ABC"
+    ["secret_key", "secret_token_value", "secret_#{'A' * 42}",
+     "secret_#{'A' * 44}", "pre#{token}", "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_legacy_notion_token_long_input_stays_linear
+    token = "secret_#{'A' * 43}"
+    [token + ("A" * 500_000), "secret_#{'A' * 500_000}"].each do |text|
+      assert_operator elapsed { mask(text) }, :<, 2.0
+    end
+  end
+
   def test_digitalocean_api_tokens_masked
     %w[dop doo dor].each do |kind|
       token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
