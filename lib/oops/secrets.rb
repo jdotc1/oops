@@ -28,6 +28,7 @@ module Oops
       }x, # Sentry org auth tokens
       /\bAIza[0-9A-Za-z_-]{35}/, # Google API keys
       /(?<![A-Za-z0-9_-])SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, # SendGrid API keys
+      /(?<![A-Za-z0-9_.-])hv[sbr]\.[A-Za-z0-9_-]{24,}(?![A-Za-z0-9_-])/, # Vault bearer tokens
       /\bnpm_[A-Za-z0-9]{36}/ # npm tokens
     ].freeze
 
