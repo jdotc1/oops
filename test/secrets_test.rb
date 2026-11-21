@@ -110,6 +110,25 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_groq_api_keys_masked
+    token = "gsk_#{'Ab12' * 10}" # Synthetic, never an issued credential.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["Groq [secret] ready", 1], mask("Groq #{token} ready")
+    assert_equal ["[secret]", 1], mask(%(gsk_"#{'Ab12' * 10}"))
+  end
+
+  def test_groq_api_key_near_misses_kept
+    token = "gsk_#{'Ab12' * 10}"
+    ["gsk_#{'a' * 29}", "gsk_example", "prefix_#{token}",
+     "not#{token}", "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_groq_api_key_long_input_stays_linear
+    assert_operator elapsed { mask("gsk_#{'A' * 200_000}") }, :<, 2.0
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
