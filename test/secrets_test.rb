@@ -110,6 +110,23 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_pypi_upload_tokens_masked
+    token = "pypi-#{'Ab12' * 22}" # Synthetic credential, never a real key.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["upload [secret] ready", 1], mask("upload #{token} ready")
+    assert_equal ["[secret]", 1], mask(%(pypi-"#{'Ab12' * 22}"))
+  end
+
+  def test_pypi_upload_token_near_misses_kept
+    token = "pypi-#{'Ab12' * 22}"
+    ["pypi-#{'A' * 84}", "pypi-example", "prefix_#{token}",
+     "not#{token}"].each { |text| assert_equal [text, 0], mask(text) }
+  end
+
+  def test_pypi_upload_token_long_input_stays_linear
+    assert_operator elapsed { mask("pypi-#{'A' * 200_000}") }, :<, 2.0
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
