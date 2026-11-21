@@ -110,6 +110,27 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_vault_bearer_tokens_masked
+    %w[hvs hvb hvr].each do |prefix|
+      token = "#{prefix}.#{'Ab12' * 8}" # Synthetic, not a live Vault credential.
+      assert_equal ["[secret]", 1], mask(token)
+      assert_equal ["Vault [secret] ready", 1], mask("Vault #{token} ready")
+    end
+    assert_equal ["[secret]", 1], mask(%(hvs."#{'Ab12' * 8}"))
+  end
+
+  def test_vault_bearer_token_near_misses_kept
+    token = "hvs.#{'Ab12' * 8}"
+    ["hvs.#{'A' * 23}", "hva.#{'A' * 32}", "hvs_example",
+     "prefix_#{token}", "not#{token}", "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_vault_bearer_token_long_input_stays_linear
+    assert_operator elapsed { mask("hvs.#{'A' * 200_000}") }, :<, 2.0
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
