@@ -15,7 +15,10 @@ module Oops
       /\bxox[abprs]-[A-Za-z0-9-]+/, # Slack tokens
       /\bsk-[A-Za-z0-9_-]{20,}/,                                        # OpenAI / Anthropic keys
       /\b[sr]k_(?:live|test)_[A-Za-z0-9]{16,}/,                         # Stripe secret keys
-      /\bglpat-[A-Za-z0-9_-]{20,}/,                                     # GitLab tokens
+      /\bglpat-[A-Za-z0-9_-]{20,}/,
+      # CircleCI personal/project API tokens: base58 UUID and 40-hex secret.
+      # Require complete components so a truncated value is not misreported as masked.
+      /(?<![A-Za-z0-9_-])CCIP(?:AT|RJ)_[1-9A-HJ-NP-Za-km-z]{20,30}_[0-9a-fA-F]{40}(?![A-Za-z0-9_-])/,                                     # GitLab tokens
       /(?<![A-Za-z0-9_])hf_[A-Za-z0-9]{16,}(?![A-Za-z0-9_])/, # Hugging Face access tokens
       /(?<![A-Za-z0-9_-])sb_secret_[A-Za-z0-9_-]{24,128}(?![A-Za-z0-9_-])/, # Supabase server-only keys
       /(?<![A-Za-z0-9_])lin_api_[A-Za-z0-9]{40}(?![A-Za-z0-9_])/, # Linear personal API keys
