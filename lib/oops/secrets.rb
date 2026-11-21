@@ -16,6 +16,7 @@ module Oops
       /\bsk-[A-Za-z0-9_-]{20,}/,                                        # OpenAI / Anthropic keys
       /\b[sr]k_(?:live|test)_[A-Za-z0-9]{16,}/,                         # Stripe secret keys
       /\bglpat-[A-Za-z0-9_-]{20,}/,                                     # GitLab tokens
+      /(?<![A-Za-z0-9_-])glptt-[A-Za-z0-9_-]{20,}(?![A-Za-z0-9_-])/, # GitLab pipeline trigger tokens
       /(?<![A-Za-z0-9_])hf_[A-Za-z0-9]{16,}(?![A-Za-z0-9_])/, # Hugging Face access tokens
       /(?<![A-Za-z0-9_-])sb_secret_[A-Za-z0-9_-]{24,128}(?![A-Za-z0-9_-])/, # Supabase server-only keys
       /(?<![A-Za-z0-9_])lin_api_[A-Za-z0-9]{40}(?![A-Za-z0-9_])/, # Linear personal API keys
