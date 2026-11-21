@@ -110,6 +110,26 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_grafana_service_account_tokens_masked
+    token = "glsa_#{'Ab12' * 8}_5b582697" # Synthetic credential.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["Grafana [secret] ready", 1], mask("Grafana #{token} ready")
+    assert_equal ["[secret]", 1], mask(%(glsa_"#{'Ab12' * 8}_5b582697"))
+  end
+
+  def test_grafana_service_account_token_near_misses_kept
+    token = "glsa_#{'Ab12' * 8}_5b582697"
+    ["glsa_#{'A' * 31}_5b582697", "glsa_#{'A' * 32}_5b58269",
+     "glsa_#{'A' * 32}_5b58269g", "prefix_#{token}",
+     "#{token}_suffix", "glsa_service_account"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_grafana_service_token_long_input_stays_linear
+    assert_operator elapsed { mask("glsa_#{'A' * 200_000}_5b582697") }, :<, 2.0
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
