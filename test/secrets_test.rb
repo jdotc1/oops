@@ -110,6 +110,26 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+  def test_legacy_notion_integration_tokens_masked
+    token = "secret_#{'Ab12' * 10}xY7" # 43 synthetic characters.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["Notion [secret] ready", 1], mask("Notion #{token} ready")
+    assert_equal ["[secret]", 1], mask(%(secret_"#{'Ab12' * 10}xY7"))
+  end
+
+  def test_legacy_notion_token_near_misses_kept
+    token = "secret_#{'Ab12' * 10}xY7"
+    ["secret_#{'A' * 42}", "secret_#{'A' * 44}",
+     "secret_key", "secret_token_value", "prefix_#{token}",
+     "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
+  def test_legacy_notion_token_long_input_stays_linear
+    assert_operator elapsed { mask("secret_#{'A' * 200_000}") }, :<, 2.0
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
