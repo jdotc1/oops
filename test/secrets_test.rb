@@ -110,6 +110,29 @@ class SecretsTest < Minitest::Test
     }.each { |input, expected| assert_equal [expected, 1], mask(input), input }
   end
 
+
+  def test_circleci_personal_and_project_api_tokens_masked
+    %w[CCIPAT CCIPRJ].each do |prefix|
+      token = "#{prefix}_#{'A1b2' * 5}A1_#{'a1b2c3d4' * 5}"
+      assert_equal ["[secret]", 1], mask(token)
+      assert_equal ["value [secret] saved", 1], mask("value #{token} saved")
+      assert_equal ["[secret]", 1], mask("#{prefix}_\"#{'A1b2' * 5}A1_\"#{'a1b2c3d4' * 5}")
+    end
+  end
+
+  def test_circleci_token_near_misses_kept
+    token = "CCIPAT_#{'A1b2' * 5}A1_#{'a1b2c3d4' * 5}"
+    [
+      "CCIPAT_ is the personal API token prefix",
+      "CCIPAT_#{'A1b2' * 4}_#{'a1b2c3d4' * 5}",
+      "CCIPAT_#{'A1b2' * 5}A1_#{'a1b2c3d4' * 4}a1b2c3d",
+      "CCIPAT_#{'A1b2' * 5}A1_#{'z' * 40}",
+      "CCIPXX_#{'A1b2' * 5}A1_#{'a1b2c3d4' * 5}",
+      "prefix_#{token}",
+      "#{token}_suffix",
+    ].each { |ordinary| assert_equal [ordinary, 0], mask(ordinary), ordinary[0, 80] }
+  end
+
   def test_hugging_face_access_tokens_masked
     token = "hf_#{'Ab12' * 6}" # Synthetic; no real credential in source control.
     assert_equal ["[secret]", 1], mask(token)
