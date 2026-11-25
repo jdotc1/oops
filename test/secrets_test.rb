@@ -272,6 +272,27 @@ class SecretsTest < Minitest::Test
     assert_equal ["https://hooks.slack.com/services/[secret]", 1], mask(url)
   end
 
+  def test_aws_sigv4_presigned_url_signature_is_masked
+    signature = "a1b2c3d4" * 8 # Synthetic 64-hex signature, not an issued URL.
+    url = "https://storage.example.invalid/asset?X-Amz-Signature=#{signature}&X-Amz-Expires=60"
+    expected = "https://storage.example.invalid/asset?X-Amz-Signature=[secret]&X-Amz-Expires=60"
+    assert_equal [expected, 1], mask(url)
+    refute_includes mask(url).first, signature
+  end
+
+  def test_aws_sigv4_signature_does_not_mask_partial_or_embedded_values
+    signature = "a1b2c3d4" * 8
+    [
+      "X-Amz-Signature=#{'a' * 63}",
+      "X-Amz-Signature=#{signature}f",
+      "pre_X-Amz-Signature=#{signature}",
+      "X-Amz-Signature=#{'x' * 64}",
+      "X-Amz-Expires=60"
+    ].each do |text|
+      assert_equal [text, 0], mask(text), text[0, 90]
+    end
+  end
+
   def test_authorization_token_scheme
     assert_equal ["Authorization: token [secret]", 1], mask("Authorization: token ghx123abc")
   end
