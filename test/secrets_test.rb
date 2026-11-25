@@ -191,6 +191,21 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_notion_legacy_integration_tokens_masked
+    token = "secret_#{'Ab12' * 10}xyz" # Synthetic legacy format, not a real token.
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["notion [secret] ready", 1], mask("notion #{token} ready")
+  end
+
+  def test_notion_legacy_integration_token_near_misses_kept
+    token = "secret_#{'Ab12' * 10}xyz"
+    ["secret_#{'A' * 42}", "secret_#{'A' * 44}",
+     "secret_key", "secret_token_value", "prefix_#{token}",
+     "#{token}_suffix"].each do |text|
+      assert_equal [text, 0], mask(text)
+    end
+  end
+
   def test_digitalocean_api_tokens_masked
     %w[dop doo dor].each do |kind|
       token = "#{kind}_v1_#{'a1b2c3d4' * 8}"
@@ -345,6 +360,7 @@ class SecretsTest < Minitest::Test
      "sb_secret_#{'A' * 100_000}",
      "lin_api_#{'A' * 100_000}_suffix",
      "ntn_#{'A' * 100_000}",
+     "secret_#{'A' * 100_000}_suffix",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
      "shpat_#{'a' * 100_000}_suffix",
      "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}",
