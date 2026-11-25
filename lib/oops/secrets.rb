@@ -51,6 +51,9 @@ module Oops
         \.[A-Za-z0-9_-]{6,7}\.[A-Za-z0-9_-]{27,38}(?![A-Za-z0-9_-])
       /x,
       %r{hooks\.slack\.com/services/(?<secret>[A-Za-z0-9/]+)}, # Slack webhook URLs
+      # S3 presigned URLs authenticate by their SigV4 query signature. Preserve
+      # the parameter name and all other URL fields; only mask the 64-hex value.
+      /(?<![A-Za-z0-9_-])X-Amz-Signature=(?<secret>[0-9a-fA-F]{64})(?![A-Za-z0-9_-])/i,
       /\beyJ[\w-]+\.[\w-]+\.[\w-]+/, # JWT
       %r{Authorization:[ \t]*(?:Bearer|Basic|token)[ \t]+(?<secret>[\w.~+/=-]+)}i,
       # Without an END line (cut off by head, a failed command or the capture
