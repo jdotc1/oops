@@ -10,6 +10,29 @@ class SecretsTest < Minitest::Test
   def test_slack_token        = assert_equal ["[secret]", 1], mask("xoxb-1234-abcd")
   def test_jwt                = assert_equal ["[secret]", 1], mask("eyJhbGciOi.eyJzdWIi.SflKxwRJ")
 
+  def test_circleci_api_tokens_masked
+    uuid = "ULUhR6rJLxYbyzyrP19iMZ"
+    hex = "8fb1e3510325f7f09361de22b9420346c53ca2cb"
+    %w[CCIPAT CCIPRJ].each do |prefix|
+      token = "#{prefix}_#{uuid}_#{hex}"
+      assert_equal ["[secret]", 1], mask(token)
+      assert_equal ["api [secret] ready", 1], mask("api #{token} ready")
+    end
+  end
+
+  def test_circleci_api_token_near_misses_kept
+    uuid = "ULUhR6rJLxYbyzyrP19iMZ"
+    hex = "8fb1e3510325f7f09361de22b9420346c53ca2cb"
+    token = "CCIPAT_#{uuid}_#{hex}"
+    ["CCIPAT_#{uuid}_#{hex[0, 39]}",
+     "CCIPAT_#{uuid[0, 21]}_#{hex}",
+     "CCIPAT_#{'0' * 22}_#{hex}",
+     "CCIPBAD_#{uuid}_#{hex}",
+     "prefix_#{token}", "#{token}_suffix"].each do |near_miss|
+      assert_equal [near_miss, 0], mask(near_miss)
+    end
+  end
+
   def test_discord_bot_tokens_masked
     encoded_id = "MTIzNDU2Nzg5MDEyMzQ1Njc4"
     token = "#{encoded_id}.Ab12Cd.#{'aB3_' * 8}"
@@ -346,6 +369,7 @@ class SecretsTest < Minitest::Test
      "lin_api_#{'A' * 100_000}_suffix",
      "ntn_#{'A' * 100_000}",
      "SG.#{'A' * 22}.#{'B' * 100_000}",
+     "CCIPAT_#{'A' * 100_000}_#{'f' * 40}",
      "shpat_#{'a' * 100_000}_suffix",
      "sntrys_eyJ#{'A' * 100_000}_#{'x' * 43}",
      "MTIzNDU2Nzg5MDEyMzQ1Njc4.Ab12Cd.#{'x' * 100_000}",
