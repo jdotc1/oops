@@ -10,7 +10,8 @@ module Oops
     # Token formats with a fixed prefix. These are also tried on shell words
     # with their quotes removed (see mask_split_tokens).
     TOKEN_FORMATS = [
-      /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,                                   # AWS access key id
+      /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/,
+      /(?<![A-Za-z0-9_])CCIP(?:AT|RJ)_[1-9A-HJ-NP-Za-km-z]{22}_[0-9a-fA-F]{40}(?![A-Za-z0-9_])/, # CircleCI access tokens                                   # AWS access key id
       /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_\w{20,})/,             # GitHub tokens
       /\bxox[abprs]-[A-Za-z0-9-]+/, # Slack tokens
       /\bsk-[A-Za-z0-9_-]{20,}/,                                        # OpenAI / Anthropic keys
