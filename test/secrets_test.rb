@@ -29,6 +29,16 @@ class SecretsTest < Minitest::Test
     end
   end
 
+  def test_sentry_user_auth_tokens_masked_without_partial_matches
+    token = "sntryu_#{'a1' * 32}"
+    assert_equal ["[secret]", 1], mask(token)
+    assert_equal ["token [secret] ready", 1], mask("token #{token} ready")
+
+    ["sntryu_#{'a1' * 31}", "x#{token}", "#{token}_tail", "sntryu_#{'z1' * 32}"].each do |value|
+      assert_equal [value, 0], mask(value)
+    end
+  end
+
   def test_bearer_header
     assert_equal ["Authorization: Bearer [secret]", 1], mask("Authorization: Bearer abc.def")
   end
