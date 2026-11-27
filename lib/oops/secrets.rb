@@ -26,6 +26,7 @@ module Oops
         (?<![A-Za-z0-9_])sntrys_eyJ[A-Za-z0-9+/]{16,800}={0,2}_
         [A-Za-z0-9+/]{43}(?![A-Za-z0-9+/=_])
       }x, # Sentry org auth tokens
+      /(?<![A-Za-z0-9_-])sntryu_[0-9a-f]{64}(?![A-Za-z0-9_-])/, # Sentry user tokens
       /\bAIza[0-9A-Za-z_-]{35}/, # Google API keys
       /(?<![A-Za-z0-9_-])SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}(?![A-Za-z0-9_-])/, # SendGrid API keys
       /\bnpm_[A-Za-z0-9]{36}/ # npm tokens
